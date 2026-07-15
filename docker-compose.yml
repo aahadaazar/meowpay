@@ -1,8 +1,9 @@
 services:
   backend:
-    image: eclipse-temurin:21-jdk
+    build:
+      context: ./backend
+      target: development
     working_dir: /workspace
-    command: ./gradlew bootRun
     env_file:
       - .env
     environment:
