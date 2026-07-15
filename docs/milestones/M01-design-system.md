@@ -1,6 +1,6 @@
 # M1 — Design system
 
-**Type:** enabler · **Status:** in progress
+**Type:** enabler · **Status:** done
 **ADRs:** [0002](../adr/0002-adopt-clay-design-system-and-extension-strategy.md) ·
 [0003](../adr/0003-dark-theme-extension.md) · [0004](../adr/0004-chart-palette-derivation.md) ·
 [0005](../adr/0005-fluid-responsive-strategy.md)
@@ -37,3 +37,4 @@ validator checks color, not layout.
 ## Progress log
 
 - 2026-07-15 — started. M1 picked up after M0 handoff; reading linked ADRs, DESIGN.md, and APP-EXTENSIONS.md before tokenization work.
+- 2026-07-15 — done. Commits 85e4595, 3994917, ce5a145, plus the final done-marker commit. Palette validator passed via Windows Node v20.19.3; visual verify inspected Chrome captures at 375 / 768 / 1440px in light and dark. Frontend tests authored, not run.
