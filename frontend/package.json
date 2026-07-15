@@ -4,9 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run validate:palette",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "validate:palette": "node ../scripts/validate_palette.js --check",
     "test": "vitest run",
     "test:watch": "vitest"
   },
