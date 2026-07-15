@@ -67,15 +67,29 @@ class CatService(
             throw BadRequestException("invalid_cat_name", "name must not be blank.")
         }
 
-        return jdbcClient.sql(
+        // create_cat and the wallet read must be separate statements: the outer scan of a single
+        // statement uses a snapshot taken before the function runs, so the wallet row the function
+        // inserts would not be visible to a join against it.
+        val catId = jdbcClient.sql(
             """
-            SELECT c.id, c.name, w.balance, c.created_at
-            FROM public.create_cat(:humanId, :name) c
-            JOIN public.wallets w ON w.cat_id = c.id
+            SELECT id
+            FROM public.create_cat(:humanId, :name)
             """.trimIndent(),
         )
             .param("humanId", humanId)
             .param("name", name)
+            .query(UUID::class.java)
+            .single()
+
+        return jdbcClient.sql(
+            """
+            SELECT c.id, c.name, w.balance, c.created_at
+            FROM public.cats c
+            JOIN public.wallets w ON w.cat_id = c.id
+            WHERE c.id = :catId
+            """.trimIndent(),
+        )
+            .param("catId", catId)
             .query(catSummaryMapper)
             .single()
     }
