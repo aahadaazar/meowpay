@@ -1,6 +1,6 @@
 # M3 — Auth & cat management
 
-**Type:** fullstack · **Status:** not started
+**Type:** fullstack · **Status:** done
 **ADRs:** [0011](../adr/0011-auth-boundary.md) · [0012](../adr/0012-rls-ownership-subquery.md)
 
 ## Scope
@@ -33,3 +33,9 @@ One human creates two cats; both appear on the dashboard with 500 treats each.
 ## Progress log
 
 - not started
+- 2026-07-15 — started. Reading auth, RLS, and product-surface contracts before implementation.
+- 2026-07-15 — done. Commits 5878990..9f8a0c4 add RLS, the new-user trigger, JWT-protected
+  cat-management APIs, magic-link UI, and backend/frontend tests (authored, not run). Verify
+  was not runnable: no host Java runtime, services were not already up, and Docker Compose was
+  not run per user instruction. Supabase Auth's live JWT signing mode remains to be confirmed
+  in the project settings; the decoder remains configurable for either a secret or JWKS.

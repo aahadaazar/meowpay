@@ -2,7 +2,7 @@ FROM eclipse-temurin:21-jdk AS development
 
 WORKDIR /workspace
 
-ENV GRADLE_USER_HOME=/opt/meowpay/gradle-home
+ENV GRADLE_USER_HOME=/tmp/meowpay-gradle-home
 
 # Prime the Gradle wrapper and dependency cache in a stable layer.
 COPY gradlew build.gradle.kts settings.gradle.kts ./

@@ -85,10 +85,10 @@ class AuthAndCatManagementIntegrationTests {
         val me = catService.me(alice)
 
         assertThat(me.displayName).isEqualTo("Alice")
-        assertThat(me.cats).singleElement().satisfies { cat ->
-            assertThat(cat.name).isEqualTo("Milo")
-            assertThat(cat.balance).isEqualTo(500)
-        }
+        assertThat(me.cats).hasSize(1)
+        val cat = me.cats.first()
+        assertThat(cat.name).isEqualTo("Milo")
+        assertThat(cat.balance).isEqualTo(500)
     }
 
     @Test
