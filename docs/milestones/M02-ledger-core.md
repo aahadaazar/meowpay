@@ -1,6 +1,6 @@
 # M2 — Ledger core (the centerpiece)
 
-**Type:** enabler · backend + database · **Status:** in progress
+**Type:** enabler · backend + database · **Status:** done
 **ADRs:** [0006](../adr/0006-ledger-first-money-movement.md) ·
 [0007](../adr/0007-treasury-backed-funding.md) ·
 [0008](../adr/0008-atomic-plpgsql-transfer.md) ·
@@ -47,3 +47,7 @@ No user-facing verify step — this milestone is proven entirely by its test sui
 
 - not started
 - 2026-07-15 — started. Preparing Supabase connectivity and the ledger migrations.
+- 2026-07-15 — done. Commits e13c428..fd9765c. Migrations 0001-0004, startup
+  database availability check, `/api/transfers/execute`, and Testcontainers coverage were
+  authored. Verify step not run here: M2 is proven by its test suite, tests are not run unless
+  asked, and this shell has no Java runtime (`JAVA_HOME` unset and no `java` on `PATH`).
