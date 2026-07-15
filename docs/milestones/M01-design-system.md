@@ -1,6 +1,6 @@
 # M1 — Design system
 
-**Type:** enabler · **Status:** design specified, tokenization not started
+**Type:** enabler · **Status:** in progress
 **ADRs:** [0002](../adr/0002-adopt-clay-design-system-and-extension-strategy.md) ·
 [0003](../adr/0003-dark-theme-extension.md) · [0004](../adr/0004-chart-palette-derivation.md) ·
 [0005](../adr/0005-fluid-responsive-strategy.md)
@@ -36,4 +36,4 @@ validator checks color, not layout.
 
 ## Progress log
 
-- not started
+- 2026-07-15 — started. M1 picked up after M0 handoff; reading linked ADRs, DESIGN.md, and APP-EXTENSIONS.md before tokenization work.
