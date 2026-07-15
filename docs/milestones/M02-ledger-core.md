@@ -1,6 +1,6 @@
 # M2 — Ledger core (the centerpiece)
 
-**Type:** enabler · backend + database · **Status:** not started
+**Type:** enabler · backend + database · **Status:** in progress
 **ADRs:** [0006](../adr/0006-ledger-first-money-movement.md) ·
 [0007](../adr/0007-treasury-backed-funding.md) ·
 [0008](../adr/0008-atomic-plpgsql-transfer.md) ·
@@ -46,3 +46,4 @@ No user-facing verify step — this milestone is proven entirely by its test sui
 ## Progress log
 
 - not started
+- 2026-07-15 — started. Preparing Supabase connectivity and the ledger migrations.
