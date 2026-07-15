@@ -10,6 +10,11 @@ REVOKE ALL ON public.humans, public.cats, public.wallets, public.ledger_entries,
 GRANT SELECT ON public.humans, public.cats, public.wallets, public.ledger_entries, public.transfers
     TO authenticated;
 
+REVOKE EXECUTE ON FUNCTION public.execute_transfer(uuid, uuid, uuid, bigint, text, text, uuid)
+    FROM PUBLIC, anon, authenticated;
+REVOKE EXECUTE ON FUNCTION public.create_cat(uuid, text)
+    FROM PUBLIC, anon, authenticated;
+
 CREATE POLICY "humans_read_own_profile"
     ON public.humans
     FOR SELECT

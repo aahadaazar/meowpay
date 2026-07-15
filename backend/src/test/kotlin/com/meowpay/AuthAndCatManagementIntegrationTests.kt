@@ -120,6 +120,14 @@ class AuthAndCatManagementIntegrationTests {
             .isEqualTo(1)
     }
 
+    @Test
+    fun `authenticated clients receive read-only database access`() {
+        assertThat(hasTablePrivilege("public.cats", "INSERT")).isFalse()
+        assertThat(hasTablePrivilege("public.wallets", "UPDATE")).isFalse()
+        assertThat(hasFunctionPrivilege("public.create_cat(uuid, text)")).isFalse()
+        assertThat(hasFunctionPrivilege("public.execute_transfer(uuid, uuid, uuid, bigint, text, text, uuid)")).isFalse()
+    }
+
     private fun createAuthUser(email: String, displayName: String): UUID {
         val id = UUID.randomUUID()
         jdbcClient.sql(
@@ -157,6 +165,19 @@ class AuthAndCatManagementIntegrationTests {
                 connection.createStatement().use { statement -> statement.execute("RESET ROLE") }
             }
         }
+
+    private fun hasTablePrivilege(table: String, privilege: String): Boolean =
+        jdbcClient.sql("SELECT has_table_privilege('authenticated', :table, :privilege)")
+            .param("table", table)
+            .param("privilege", privilege)
+            .query(Boolean::class.java)
+            .single()
+
+    private fun hasFunctionPrivilege(function: String): Boolean =
+        jdbcClient.sql("SELECT has_function_privilege('authenticated', :function, 'EXECUTE')")
+            .param("function", function)
+            .query(Boolean::class.java)
+            .single()
 
     private fun migrationFiles(): List<Path> =
         Files.list(Path.of("../supabase/migrations")).use { stream ->
