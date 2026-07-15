@@ -23,6 +23,12 @@ class GlobalExceptionHandler {
             .status(HttpStatus.FORBIDDEN)
             .body(ApiError(exception.code, exception.message))
 
+    @ExceptionHandler(NotFoundException::class)
+    fun notFound(exception: NotFoundException): ResponseEntity<ApiError> =
+        ResponseEntity
+            .status(HttpStatus.NOT_FOUND)
+            .body(ApiError(exception.code, exception.message))
+
     @ExceptionHandler(HttpMessageNotReadableException::class)
     fun unreadableBody(): ResponseEntity<ApiError> =
         ResponseEntity

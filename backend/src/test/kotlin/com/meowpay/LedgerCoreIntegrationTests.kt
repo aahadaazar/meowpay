@@ -39,6 +39,42 @@ class LedgerCoreIntegrationTests {
 
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
+                statement.execute("CREATE SCHEMA IF NOT EXISTS auth")
+                statement.execute(
+                    """
+                    CREATE TABLE IF NOT EXISTS auth.users (
+                        id uuid PRIMARY KEY,
+                        email text,
+                        raw_user_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb
+                    )
+                    """.trimIndent(),
+                )
+                statement.execute(
+                    """
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
+                            CREATE ROLE anon;
+                        END IF;
+                        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
+                            CREATE ROLE authenticated;
+                        END IF;
+                    END;
+                    $$
+                    """.trimIndent(),
+                )
+                statement.execute(
+                    """
+                    CREATE OR REPLACE FUNCTION auth.uid()
+                    RETURNS uuid
+                    LANGUAGE sql
+                    STABLE
+                    AS $$
+                        SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
+                    $$
+                    """.trimIndent(),
+                )
+                statement.execute("GRANT USAGE ON SCHEMA auth TO authenticated")
                 statement.execute("DROP SCHEMA public CASCADE")
                 statement.execute("CREATE SCHEMA public")
             }
