@@ -109,7 +109,8 @@ rejected alternatives, and the validator transcript.
 
 **The palette was derived and validated by running
 `scripts/validate_palette.js` against Clay's real surfaces — light `#fffaf0`, dark `#1a2a2a`
-— in both modes. Nothing here is eyeballed.** The surfaces matter: a mark is only legible
+— in both modes. Nothing here is eyeballed.** The validator is vendored into the repo and wired
+as a committed check in M1, so these results are re-runnable. The surfaces matter: a mark is only legible
 against the surface it actually renders on, and MeowPay's data cards are `canvas` in light and
 `surface-dark-elevated` in dark.
 

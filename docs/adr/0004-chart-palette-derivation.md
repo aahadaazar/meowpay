@@ -172,8 +172,9 @@ meaning by hue alone.
 
 - The charts are brand-recognisable — every hue angle is Clay's — and legible in both modes,
   which the raw brand hues are not.
-- **The palette is reproducible.** The command is in this document; a reviewer can re-run it and
-  get the same verdict. Changing a hue means re-running, not re-arguing.
+- **The palette is reproducible.** The validator is vendored to `scripts/validate_palette.js` and
+  wired as a committed check in M1, so the runs above are repeatable rather than a claim in a
+  document. Changing a hue means re-running, not re-arguing.
 - **Five series maximum**, then "Other". A property of Clay's hue wheel, not of the method.
 - Dark mode loses no palette fidelity — the same steps pass.
 - The validator checks **color, not layout**. Label collision, tick density and reflow are
