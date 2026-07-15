@@ -42,3 +42,7 @@ onto a DTO/HTTP response), `GlobalExceptionHandler`, `POST /api/transfers/execut
 ## Verify
 
 No user-facing verify step — this milestone is proven entirely by its test suite.
+
+## Progress log
+
+- not started

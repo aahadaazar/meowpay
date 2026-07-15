@@ -34,3 +34,7 @@ executes ([0016](../adr/0016-agent-proposes-human-confirms.md)).
 "send Milo 10 treats for the red dot" → a proposal appears in the confirm dialog → confirm →
 the transfer lands, indistinguishable in the trail from a manual send except for its `source`
 badge.
+
+## Progress log
+
+- not started

@@ -27,3 +27,7 @@ directly (the agentic path in M8 reuses this same endpoint and this same confirm
 Send treats between your own two cats: the total hero stays constant (own-cat transfers net to
 zero — [0015](../adr/0015-client-side-chart-derivation.md)), both cat cards move, and the trail
 shows both legs.
+
+## Progress log
+
+- not started

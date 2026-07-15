@@ -24,3 +24,7 @@ Repo layout and both runtimes wired to boot, with no feature behind them yet.
 
 Both apps boot locally; the backend rejects an unauthenticated request; the frontend renders an
 empty shell.
+
+## Progress log
+
+- not started

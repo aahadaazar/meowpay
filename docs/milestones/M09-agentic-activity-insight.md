@@ -25,3 +25,7 @@ identifier can never widen what it reads ([0018](../adr/0018-tool-use-data-scopi
 
 Click the insight button after some activity exists; the summary describes only the caller's
 own cats, never another human's, even if prompted to.
+
+## Progress log
+
+- not started

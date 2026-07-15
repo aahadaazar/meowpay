@@ -33,3 +33,7 @@ running token system.
 
 Render the dashboard shell at 375px / 768px / 1440px in both themes and look at it — the
 validator checks color, not layout.
+
+## Progress log
+
+- not started

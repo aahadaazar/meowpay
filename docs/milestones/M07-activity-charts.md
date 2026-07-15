@@ -27,3 +27,7 @@ holds — no aggregate endpoint ([0015](../adr/0015-client-side-chart-derivation
 
 No dedicated verify step beyond the test suite and a visual pass at 375 / 768 / 1440px in both
 themes — the same layout check M1 establishes.
+
+## Progress log
+
+- not started

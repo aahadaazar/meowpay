@@ -29,3 +29,7 @@ grant.
 ## Verify
 
 One human creates two cats; both appear on the dashboard with 500 treats each.
+
+## Progress log
+
+- not started

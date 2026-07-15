@@ -27,3 +27,7 @@ Package the finished slice so it runs from a clean clone — the brief's explici
 
 `docker compose up --build` from a clean clone works end to end, with no undocumented manual
 step.
+
+## Progress log
+
+- not started

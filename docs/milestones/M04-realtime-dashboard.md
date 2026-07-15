@@ -28,3 +28,7 @@ M5 adds that — but the welcome grants from M3 already give it something real t
 
 Welcome grants from M3 are already visible in the trail with no further backend work — the
 first real end-to-end moment: create a cat, watch its grant land live.
+
+## Progress log
+
+- not started

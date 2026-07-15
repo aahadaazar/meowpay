@@ -25,3 +25,7 @@ Funding a wallet — implemented as a transfer from the treasury, not a new writ
 ## Verify
 
 Top up an empty wallet from the dashboard; the balance and total update live, with no refresh.
+
+## Progress log
+
+- not started
