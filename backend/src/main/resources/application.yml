@@ -8,12 +8,10 @@ spring:
     url: ${SUPABASE_DB_URL:}
     username: ${SUPABASE_DB_USERNAME:}
     password: ${SUPABASE_DB_PASSWORD:}
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${SUPABASE_JWT_ISSUER:}
-
 app:
+  security:
+    jwt:
+      secret: ${SUPABASE_JWT_SECRET:}
+      jwk-set-uri: ${SUPABASE_JWT_JWK_SET_URI:}
   cors:
     allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
