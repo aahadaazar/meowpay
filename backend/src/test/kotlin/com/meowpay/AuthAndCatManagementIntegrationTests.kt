@@ -68,6 +68,10 @@ class AuthAndCatManagementIntegrationTests {
                 statement.execute("GRANT USAGE ON SCHEMA auth TO authenticated")
                 statement.execute("DROP SCHEMA IF EXISTS public CASCADE")
                 statement.execute("CREATE SCHEMA public")
+                // Recreating public drops the USAGE grant a real public schema carries; Supabase
+                // grants this at bootstrap, so restore it or SET ROLE authenticated cannot reach
+                // the schema and RLS is never exercised.
+                statement.execute("GRANT USAGE ON SCHEMA public TO anon, authenticated")
                 migrationFiles().forEach { migration -> statement.execute(Files.readString(migration)) }
             }
         }
