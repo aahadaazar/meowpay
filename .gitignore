@@ -57,3 +57,4 @@ junit.xml
 # Misc
 *.pdf
 !docs/**/*.pdf
+docs/SESSION-PROMPT.md
