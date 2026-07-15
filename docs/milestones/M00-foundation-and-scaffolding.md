@@ -1,6 +1,6 @@
 # M0 — Foundation & scaffolding
 
-**Type:** enabler · **Status:** not started · **ADR:** [0001](../adr/0001-stack-and-topology.md)
+**Type:** enabler · **Status:** in progress · **ADR:** [0001](../adr/0001-stack-and-topology.md)
 
 ## Scope
 
@@ -27,4 +27,4 @@ empty shell.
 
 ## Progress log
 
-- not started
+- 2026-07-15 — started. M0 selected as first eligible milestone; scaffolding beginning from ADR 0001.
