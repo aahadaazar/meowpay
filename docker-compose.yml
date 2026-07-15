@@ -7,15 +7,18 @@ services:
       - .env
     environment:
       CORS_ALLOWED_ORIGIN: http://localhost:3000
+      GRADLE_USER_HOME: /gradle-cache
     ports:
       - "8080:8080"
     volumes:
       - ./backend:/workspace
+      - gradle_cache:/gradle-cache
 
   frontend:
-    image: node:22-alpine
+    build:
+      context: ./frontend
+      target: development
     working_dir: /workspace
-    command: sh -c "npm install && npm run dev -- --hostname 0.0.0.0"
     env_file:
       - .env
     environment:
@@ -24,5 +27,12 @@ services:
       - "3000:3000"
     volumes:
       - ./frontend:/workspace
+      - frontend_node_modules:/workspace/node_modules
+      - frontend_next:/workspace/.next
     depends_on:
       - backend
+
+volumes:
+  gradle_cache:
+  frontend_node_modules:
+  frontend_next:
