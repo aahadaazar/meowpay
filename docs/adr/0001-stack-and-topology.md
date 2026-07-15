@@ -1,6 +1,6 @@
 # 0001. Stack and topology
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M0
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M0](../milestones/M00-foundation-and-scaffolding.md)
 
 ## Context
 

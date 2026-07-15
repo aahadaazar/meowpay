@@ -1,6 +1,6 @@
 # 0016. The agent proposes, a human confirms, the backend executes
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M8
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M8](../milestones/M08-agentic-nl-composer.md)
 
 ## Context
 

@@ -1,6 +1,6 @@
 # 0010. Actor vs. account — `initiated_by` records who acted, not whose money moved
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M2
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M2](../milestones/M02-ledger-core.md)
 
 ## Context
 

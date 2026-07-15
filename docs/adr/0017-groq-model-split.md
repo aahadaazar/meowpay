@@ -1,6 +1,6 @@
 # 0017. Two Groq models, split by job — 8b to parse, 70b to summarize
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M8
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M8](../milestones/M08-agentic-nl-composer.md)
 
 ## Context
 

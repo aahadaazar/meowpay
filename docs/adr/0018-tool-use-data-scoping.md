@@ -1,6 +1,6 @@
 # 0018. Tool-use data scoping — never trust a model-supplied identifier
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M9
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M9](../milestones/M09-agentic-activity-insight.md)
 
 ## Context
 

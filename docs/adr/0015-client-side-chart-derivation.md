@@ -1,6 +1,6 @@
 # 0015. Charts derive client-side from the realtime ledger window
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M7
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M7](../milestones/M07-activity-charts.md)
 
 ## Context
 

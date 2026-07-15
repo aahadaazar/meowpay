@@ -1,6 +1,6 @@
 # 0002. Adopt Clay as the design system; extend it in a companion document
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M1
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M1](../milestones/M01-design-system.md)
 
 ## Context
 

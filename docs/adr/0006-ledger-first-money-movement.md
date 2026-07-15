@@ -1,6 +1,6 @@
 # 0006. Ledger-first money movement; `wallets.balance` is a derived cache
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M2
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M2](../milestones/M02-ledger-core.md)
 
 ## Context
 

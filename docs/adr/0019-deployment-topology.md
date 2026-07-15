@@ -1,6 +1,6 @@
 # 0019. Deployment topology — two containers, hosted database, Compose
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M10
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M10](../milestones/M10-dockerization-and-readme.md)
 
 ## Context
 

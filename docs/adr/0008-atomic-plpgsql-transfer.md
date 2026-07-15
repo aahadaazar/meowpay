@@ -1,6 +1,6 @@
 # 0008. `execute_transfer` — one atomic plpgsql function; failures are INSERTed, not RAISEd
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M2
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M2](../milestones/M02-ledger-core.md)
 
 ## Context
 

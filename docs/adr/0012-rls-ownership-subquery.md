@@ -1,6 +1,6 @@
 # 0012. RLS is the authorization boundary; ownership is an EXISTS subquery
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M3
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M3](../milestones/M03-auth-and-cat-management.md)
 
 ## Context
 

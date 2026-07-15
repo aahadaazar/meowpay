@@ -1,6 +1,6 @@
 # 0011. Auth boundary — GoTrue owns identity; Kotlin is a JWT-only resource server
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M3
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M3](../milestones/M03-auth-and-cat-management.md)
 
 ## Context
 

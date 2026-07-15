@@ -1,6 +1,6 @@
 # 0004. Chart palette — derived from Clay's hues, validated against Clay's surfaces
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M1
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M1](../milestones/M01-design-system.md)
 
 > Every hex in this document came out of `validate_palette.js`. The transcripts are included
 > rather than summarised, because "we ran it" is not a claim a reader should have to take on

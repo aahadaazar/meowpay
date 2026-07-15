@@ -1,6 +1,6 @@
 # 0014. Top-up is a treasury transfer; the amount policy is server-side
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M6
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M6](../milestones/M06-topup.md)
 
 ## Context
 

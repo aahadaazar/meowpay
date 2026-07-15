@@ -1,6 +1,6 @@
 # 0013. Realtime scopes via RLS; subscribe to `ledger_entries`, never `transfers`
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M4
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M4](../milestones/M04-realtime-dashboard.md)
 
 ## Context
 

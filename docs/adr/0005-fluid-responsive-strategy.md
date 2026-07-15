@@ -1,6 +1,6 @@
 # 0005. Fluid responsive — clamp() between the system's own endpoints
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M1
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M1](../milestones/M01-design-system.md)
 
 ## Context
 

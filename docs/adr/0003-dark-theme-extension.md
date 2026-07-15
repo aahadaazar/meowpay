@@ -1,6 +1,6 @@
 # 0003. Dark theme — a deliberate deviation from a documented system contract
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** M1
+**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M1](../milestones/M01-design-system.md)
 
 > **This ADR records a knowing deviation from an explicit rule in `DESIGN.md`, taken on an
 > explicit call. It is a trade-off, not an oversight.** The rule is quoted below in full so
