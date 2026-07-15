@@ -51,3 +51,11 @@ No user-facing verify step — this milestone is proven entirely by its test sui
   database availability check, `/api/transfers/execute`, and Testcontainers coverage were
   authored. Verify step not run here: M2 is proven by its test suite, tests are not run unless
   asked, and this shell has no Java runtime (`JAVA_HOME` unset and no `java` on `PATH`).
+- 2026-07-15 — **verified. Suite run for the first time: 9 tests, 0 failures, 0 skipped**, against a
+  real Postgres with the real migrations applied. Both invariants hold — per-wallet
+  `SUM(signed ledger) == balance` and global `SUM(all signed entries) == 0`. Also covered:
+  idempotency replay, concurrent double-send, the treasury negative-balance asymmetry, and the
+  ownership/`source`/system-recipient rejections. **The ledger core needed no fixes.** Ran under
+  Temurin 21 + Docker 28.1.1. One unrelated blocker had to be cleared first: a Kotlin/AssertJ
+  `satisfies` overload ambiguity in M3's test file failed `compileTestKotlin`, which compiles all
+  test sources together and so blocked this suite too.

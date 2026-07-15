@@ -39,3 +39,19 @@ One human creates two cats; both appear on the dashboard with 500 treats each.
   was not runnable: no host Java runtime, services were not already up, and Docker Compose was
   not run per user instruction. Supabase Auth's live JWT signing mode remains to be confirmed
   in the project settings; the decoder remains configurable for either a secret or JWKS.
+- 2026-07-15 — **backend verified: 4 tests, 0 failures.** `/me` returns only the caller's cats, the
+  roster excludes the treasury, RLS isolates humans, and a new cat's welcome grant reconciles. The
+  first run exposed three defects, all fixed:
+  - **`CatService.create` returned zero rows — a real production bug.** It called `create_cat(...)`
+    and joined `public.wallets` in a single statement; Postgres takes the outer snapshot before the
+    function runs, so the wallet the function inserts was invisible to the join. Now two statements.
+    M2 missed it by calling `create_cat` without a join.
+  - **The RLS test never reached RLS.** The harness recreates schema `public`, dropping the `USAGE`
+    grant a real one carries, so `SET ROLE authenticated` failed with *permission denied for schema
+    public* before any policy evaluated. Restored the grant alongside the harness's existing Supabase
+    emulation — a test-fidelity gap, not a production bug.
+  - **A Kotlin/AssertJ `satisfies` overload ambiguity** failed `compileTestKotlin` (and so blocked
+    M2's suite as well). Its two inner assertions had therefore never run; they pass now.
+  - Knock-on: this milestone's `CatService` broke M0's context tests, which asserted the app boots
+    without a datasource. See M0's log.
+  UI verify (dashboard walkthrough) still needs a running app + live Supabase. Frontend tests deferred.

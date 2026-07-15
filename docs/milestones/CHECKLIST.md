@@ -1,6 +1,7 @@
 # MeowPay — Milestone Checklist
 
 **4 of 11 complete.** M0–M3 done; M4–M10 not started.
+**Backend suite green — 15 tests, 0 failures** (2026-07-15). Frontend tests deferred.
 
 | | Milestone | Type | Status |
 |---|---|---|---|
@@ -18,35 +19,83 @@
 
 ---
 
-## ⚠️ Verification debt — read before continuing
+## ✅ Verification status
 
-Every milestone so far was authored but **not executed**. Tests are written-not-run by design (the
-milestone method), but the *verify* steps were also skipped for environmental reasons, and that debt
-has compounded across four milestones.
+**The backend suite is green — 15 tests, 0 failures, 0 skipped** (2026-07-15). The compounded
+verification debt across M0–M3 is now cleared on the backend side.
 
-- [ ] **M0 verify** — both apps boot; backend rejects an unauthenticated `/api/**` request.
-      *Skipped: no Java, no Node/npm at the time.*
-- [x] **M1 verify** — palette validator passed (Node v20.19.3); visual pass at 375/768/1440 in both
-      themes. **The only milestone actually verified.**
-- [ ] **M2 verify** — none needed *except* its test suite, which is the entire proof. **Never run.**
-- [ ] **M3 verify** — one human creates two cats; both show 500 treats.
-      *Skipped: no host Java runtime, services not up.*
+| Suite | Milestone | Tests | Result |
+|---|---|---|---|
+| `LedgerCoreIntegrationTests` | M2 | 9 | ✅ |
+| `AuthAndCatManagementIntegrationTests` | M3 | 4 | ✅ |
+| `SecurityConfigTests` | M0 | 1 | ✅ |
+| `MeowPayApplicationTests` | M0 | 1 | ✅ |
 
-**The sharpest risk:** M2 is the centerpiece — the ledger, `execute_transfer`, idempotency,
-conservation — and its doc says plainly *"proven entirely by its test suite."* That suite has never
-executed. Everything M4–M10 builds sits on top of code with zero execution evidence.
+**M2 — the centerpiece — is now proven.** Its doc says it is *"proven entirely by its test suite"*,
+and that suite now passes against a real Postgres with the real migrations applied. Both invariants
+hold: per-wallet `SUM(signed ledger) == balance`, and global `SUM(all signed entries) == 0`.
 
-### Blocking prerequisites
-- [ ] **Java runtime** — `JAVA_HOME` unset, no `java` on `PATH`. Blocks every backend test and boot.
+Run it with:
+```powershell
+$env:JAVA_HOME = (Get-ChildItem 'C:\Program Files\Eclipse Adoptium' -Directory |
+                  Where-Object Name -like 'jdk-21*' | Select-Object -First 1).FullName
+cd e:\Projects\meow-pay\backend
+.\gradlew.bat test
+```
+
+### Bugs the first run surfaced
+Everything below had been authored but never compiled or executed, so none of it was known.
+
+1. **`CatService.create` returned zero rows — a real production bug** *(fixed)*. It called
+   `create_cat(...)` and joined `public.wallets` **in one statement**. Postgres takes the outer
+   query's snapshot before the function runs, so the wallet row the function inserts was invisible to
+   the join. Split into two statements. *M2 never caught this because it calls `create_cat` without a
+   join.*
+2. **M3 broke M0's context tests** *(fixed)*. M0 asserted the app boots with no datasource; M3 added
+   `CatService`, which constructor-injects `JdbcClient`. MeowPay is a database-backed service and can
+   no longer start without a DB — so that premise was obsolete. Both context tests were rewritten
+   against Testcontainers, and `database verifier is skipped when no datasource is configured` was
+   **deleted**: `DatabaseConnectionVerifier` is `@ConditionalOnBean(JdbcClient::class)`, so it
+   asserted a state that can no longer exist.
+3. **RLS test never reached RLS** *(fixed)*. The harness does `DROP SCHEMA public CASCADE; CREATE
+   SCHEMA public`, discarding the `USAGE` grant a real `public` schema carries — so `SET ROLE
+   authenticated` failed with *permission denied for schema public* before any policy was evaluated.
+   Restored the grant, matching the harness's existing Supabase emulation. **Test-fidelity gap, not a
+   production bug** — real Supabase grants this at bootstrap.
+4. **Kotlin/AssertJ compile error** *(fixed)*. `satisfies { }` couldn't resolve between the
+   `Consumer` and `ThrowingConsumer` overloads, failing `compileTestKotlin` — which blocked the M2
+   suite too, since all test sources compile together.
+
+### Still outstanding
+- [ ] **Frontend tests — 6 files failing, deferred by decision.** Failures look like *harness config*,
+      not product defects: the `@/` path alias isn't configured in vitest (3 files — the imported
+      source files all exist), `window.matchMedia` isn't mocked (theme-toggle), `NextRequest` header
+      mocking (middleware), plus 3 design-token assertions. Not yet triaged.
+- [ ] **M0 verify (frontend half)** — the backend boots and rejects unauthenticated `/api/**`
+      (proven by `SecurityConfigTests`); the frontend has not been booted.
+- [ ] **M3 verify (UI half)** — the *backend* path is proven by `AuthAndCatManagementIntegrationTests`
+      (human creates cats, each funded with 500, RLS isolates humans). The dashboard walkthrough needs
+      a running app + live Supabase.
 - [ ] **`.env` credentials** — Supabase URL, anon key, `SUPABASE_DB_URL` (Session Pooler, IPv4),
-      `SUPABASE_JWT_SECRET`, `GROQ_API_KEY`.
-- [ ] **Confirm Supabase JWT signing mode** (HS256 vs JWKS) in project Auth settings — an open item
-      carried from M3. The decoder is configurable either way, but the live mode is still unconfirmed
-      and blocks any real authenticated request.
-- [ ] **Docker Compose** not yet run (requires user input).
+      `SUPABASE_JWT_SECRET`, `GROQ_API_KEY`. *Not needed for the backend suite* — it uses an ephemeral
+      Testcontainers Postgres — but required for any live run.
+- [ ] **Confirm Supabase JWT signing mode** (HS256 vs JWKS) in project Auth settings — carried from
+      M3. The decoder handles either; the live mode is still unconfirmed.
+- [ ] **Docker Compose** not yet run.
 
-> Recommendation: run the M2 suite before starting M4. If the ledger has a defect, every milestone
-> after it is built on sand — and M4–M7 all read from it.
+### Flags for M10 (fresh-clone reproducibility)
+The brief explicitly checks that *"the repo is public and runs from a fresh clone"*:
+- [ ] **`frontend/package-lock.json` is not committed**, and the one on disk was generated on
+      **linux-musl** (it carried only `@rollup/rollup-linux-x64-musl`), so installing on Windows
+      failed on the missing platform binary until a clean reinstall. An uncommitted lockfile means
+      non-reproducible installs from a fresh clone.
+- [ ] **`next@14.2.15` has a published security vulnerability** (npm deprecation warning points to
+      the 2025-12-11 Next.js advisory). Worth patching before submission.
+
+### Environment (resolved)
+- ✅ **JDK 21** — Temurin `jdk-21.0.11.10-hotspot`. Note `JAVA_HOME` was set to a nonexistent
+      `C:\Java`; `gradlew.bat` reads it first, so it must point at the real install.
+- ✅ **Docker 28.1.1** running — required by Testcontainers.
 
 ---
 
