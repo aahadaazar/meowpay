@@ -54,5 +54,4 @@ only: `/transfers/execute` must continue rejecting that source from the browser.
 
 ## Worktree note
 
-`README.md` and `frontend/package-lock.json` remain pre-existing, uncommitted worktree changes
-and were not included in M5 commits.
+The worktree was clean when this handoff was recorded; no uncommitted M5 changes remain.
