@@ -1,9 +1,12 @@
 # MeowPay — Milestone Checklist
 
-**8 of 11 complete.** M0–M7 done; M8–M9 deliberately deferred to clear testing debt; M10 not
-started.
+**8 of 12 complete.** M0–M7 done; M8–M9 deliberately deferred to clear testing debt; M10 not
+started; M11 (added 2026-07-16, see below) not started.
 **Backend suite green — 17 tests, 0 failures. Frontend suite green — 24 tests, 0 failures**
-(2026-07-16). Live-app visual/UI walkthroughs still need a browser and are not run.
+(2026-07-16). A live-browser Playwright e2e suite (`e2e/`) now exists and was run against the full
+docker-compose stack — see "e2e suite run against the live stack" below. It surfaced and fixed a
+real, production-breaking backend auth bug (wrong JWT verification mode) plus two harness bugs. The
+Realtime dashboard crash found in that run is now fixed; the suite still has unrelated failures.
 
 | | Milestone | Type | Status |
 |---|---|---|---|
@@ -18,6 +21,7 @@ started.
 | M8 | [Agentic NL composer](M08-agentic-nl-composer.md) | fullstack | ⬜ not started |
 | M9 | [Agentic activity insight](M09-agentic-activity-insight.md) | fullstack | ⬜ not started |
 | M10 | [Dockerization & README](M10-dockerization-and-readme.md) | packaging | ⬜ not started |
+| M11 | [e2e suite against local Supabase](M11-e2e-local-supabase.md) | tooling | ⬜ not started |
 
 ---
 
@@ -110,18 +114,94 @@ Everything below had been authored but never compiled or executed, so none of it
    before migrations run. **Test-fidelity gap, not a production bug.**
 
 ### Still outstanding
-- [ ] **M0 verify (frontend half)** — the backend boots and rejects unauthenticated `/api/**`
-      (proven by `SecurityConfigTests`); the frontend has not been booted. Needs a browser; no
-      browser-automation tool is available in this environment.
-- [ ] **M3 verify (UI half)** — the *backend* path is proven by `AuthAndCatManagementIntegrationTests`
-      (human creates cats, each funded with 500, RLS isolates humans). The dashboard walkthrough needs
-      a running app + live Supabase + a browser — same blocker as above.
-- [ ] **M1/M7 visual pass at 375/768/1440px in both themes** — same blocker; the palette and design
-      tokens are now proven correct by the (passing) unit and validator suites, but the responsive
-      layout itself has not been eyeballed in a real viewport.
-- [ ] **Confirm Supabase JWT signing mode** (HS256 vs JWKS) in project Auth settings — carried from
-      M3. The decoder handles either; the live mode is still unconfirmed.
-- [ ] **Docker Compose** not yet run.
+- [x] **M0 verify (frontend half)** — now covered by `e2e/tests/m00-foundation.spec.ts` (passes):
+      unauthenticated `/api/**` → 401, unauthenticated visit → redirect to `/login`.
+- [~] **M3 verify (UI half)** — `e2e/tests/m03-auth-and-cat-management.spec.ts` covers this and
+      mostly passes (login validation, empty state, welcome grants, cross-human isolation); one case
+      ("shows the check-your-email notice") times out — see e2e findings below, not yet root-caused.
+- [~] **M1/M7 visual pass at 375/768/1440px in both themes** — `e2e/tests/m01-m07-visual.spec.ts`
+      covers this. The login-page pass (6 shots, both themes) is green. The dashboard pass is
+      currently blocked by open e2e bug 4 below (its `beforeAll` populates a human with cats/a
+      transfer, which hits the realtime crash).
+- [x] **Confirm Supabase JWT signing mode** (HS256 vs JWKS) in project Auth settings — **resolved:
+      it's ES256/JWKS.** See e2e finding 1 below — this was a real, previously-unknown production bug,
+      not just an unconfirmed setting.
+- [x] **Docker Compose** — now the standard way this project is run; used throughout the e2e work
+      below.
+
+### e2e suite run against the live stack (2026-07-16)
+The Playwright suite in [`e2e/`](../../e2e/README.md) was run for the first time, against the full
+`docker-compose` stack (`development` targets) and the live Supabase project. It found and fixed
+three bugs blocking the suite entirely, and found one further bug still open.
+
+**Fixed:**
+1. **Wrong JWT verification mode — a real production bug, not just a test blocker.** The live
+   Supabase project signs with **ES256/JWKS**; `.env` only had the legacy `SUPABASE_JWT_SECRET`
+   (HS256) set, so the backend rejected **every** real JWT with `Signed JWT rejected: Another
+   algorithm expected, or no matching key(s) found`. This broke all authenticated backend calls, not
+   e2e alone. Two changes were needed: `SUPABASE_JWT_JWK_SET_URI` added to `.env`, and
+   `SecurityConfig.kt`'s `NimbusJwtDecoder.withJwkSetUri(...)` explicitly allowed `RS256`/`ES256` —
+   Spring Security's JWKS decoder otherwise trusts RS256 only, and silently rejects a token signed
+   with any other algorithm even when the right key is present in the JWKS document.
+2. **`lib/supabase/middleware.ts` blocked its own test-login route.** `publicPaths` allowlisted
+   `/login` and `/auth/callback` but not `/api/test/login`
+   (`frontend/app/api/test/login/route.ts`), so every e2e login attempt was redirected to the login
+   page (HTML) before reaching the handler, instead of getting a session back. Added the path.
+3. **e2e locator bug**, not a product bug: `m03-auth-and-cat-management.spec.ts` used
+   `getByRole("alert", { name: ... })`. `role="alert"`'s accessible name is not computed from its
+   text content per the ARIA spec (unlike `button`/`link`), so this never matched even though the
+   element was genuinely visible. Switched to `.filter({ hasText })`.
+
+**Resolved (2026-07-16):**
+4. **Realtime channel double-subscribe race crashed the entire dashboard.** `useRealtimeWallets` and
+   `useRealtimeLedger` (`frontend/hooks/use-realtime-*.ts`) each create their own Supabase client and
+   subscribe inside a plain `useEffect`. Under React 18 Strict Mode's dev-only double-invoke (`next
+   dev`, which is what `docker-compose.yml`'s `development` target runs), the effect fires, cleans
+   up, and fires again in quick succession; on the second `.subscribe()` the Realtime socket has
+   occasionally not yet re-established auth. Rather than rejecting the event, Supabase Realtime's RLS
+   enforcement sends a **redacted** `postgres_changes` payload — `record: {}` with
+   `errors: ["Error 401: Unauthorized"]`:
+   ```
+   {"event":"postgres_changes","payload":{"data":{"table":"ledger_entries","type":"INSERT",
+   "record":{},"columns":[],"errors":["Error 401: Unauthorized"],...}}}
+   ```
+   `applyLedgerChange` (`components/realtime-dashboard.tsx`) maps that empty row through
+   `ledgerEntryFromRow` with no validation, and `formatDate(entry.createdAt)`
+   (`components/ledger-trail.tsx:17`) calls `new Date(undefined)` →
+   `Intl.DateTimeFormat.format()` throws `RangeError: Invalid time value`, taking down the whole
+   `RealtimeDashboard` tree. Confirmed intermittent by running the same single test 3x in isolation:
+   pass / fail / fail. This is the root cause of nearly every remaining e2e failure (M4–M7, the
+   dashboard visual pass) — once the crash fires, the whole page is gone, so unrelated assertions on
+   the same page fail too.
+   - Not confirmed whether this also reproduces in a **production** build — `next build && next
+     start` does not double-invoke effects the way `next dev`'s Strict Mode does — but the e2e suite
+     runs against the `development` compose target, so it hits this regardless.
+   Fixed in `use-realtime-wallets` and `use-realtime-ledger`: each hook now waits for the browser
+   session, installs its JWT on Realtime, and retains its channel through Strict Mode's simulated
+   effect cleanup/re-setup instead of double-subscribing. `use-realtime-ledger` reconciles the last
+   100 RLS-scoped rows after its channel joins, closing the initial-fetch-to-subscription gap.
+   `applyLedgerChange` also rejects redacted or timestamp-invalid rows, so an unexpected malformed
+   payload cannot take down the dashboard. The hook tests now cover the Strict Mode replay and the
+   dashboard-state test covers the redacted payload.
+
+**Separately observed, not root-caused:** `m03-auth-and-cat-management.spec.ts`'s "shows the
+check-your-email notice" test times out waiting for the notice after a real `auth.signInWithOtp`
+call. Plausibly Supabase's magic-link rate limit after several back-to-back suite runs against the
+same project rather than a product bug, but not confirmed.
+
+**Latest run (2026-07-16):** all 4 M4 Realtime tests pass in the normal 10-worker Playwright run,
+including live grant delivery, responsive trail rendering, and two-human socket isolation. The full
+suite is not yet green: 30 of 41 pass. The remaining failures are six visual-baseline diffs, the
+separate magic-link notice timeout, and four M5/M7 transfer/recipient-update cases; none is the
+dashboard crash above.
+
+**Then the hosted project's admin-API rate limit was hit.** A subsequent full run returned
+`Test login failed (500): {"message":"Request rate limit reached"}` on 16 of 41 tests — the
+cumulative cost of the many runs above (each test mints a fresh human via the admin API, nothing is
+torn down). At that point the suite stops giving a trustworthy signal: failures become
+indistinguishable between "real bug" and "exhausted the hosted project's quota." **See
+[M11](M11-e2e-local-supabase.md) / [ADR 0020](../adr/0020-e2e-against-local-supabase.md)** —
+retargets local e2e iteration at a local Supabase instance so this stops recurring.
 
 ### Resolved — frontend test suite fixed, all 24 tests now run and pass (2026-07-16)
 Node.js became available in the environment this session (it wasn't during M0–M7 authoring), which
@@ -266,6 +346,19 @@ is schedule, not dependency, driven. Resume with M8 once the testing backlog is 
 - [ ] README: **how Claude Code built the repo** — distinct from the in-app Groq agents
 - [ ] Verify: `docker compose up --build` from a clean clone works end to end, **no undocumented
       manual step**
+
+### ⬜ M11 — e2e suite against local Supabase `tooling` · ADR 0020
+Added 2026-07-16, after the hosted-project e2e run above hit Supabase's admin-API rate limit
+mid-session. Full detail: [M11-e2e-local-supabase.md](M11-e2e-local-supabase.md).
+- [ ] `supabase start` (Supabase CLI) stood up for local e2e use, migrations 0001–0007 applied
+      against it
+- [ ] New `e2e/.env.e2e` (or equivalent) carrying local Supabase's URL/anon/service-role keys
+- [ ] Compose override or separate `--env-file` path so backend+frontend point at local Supabase
+      **only during an e2e run** — default `docker compose up` / `npm run dev` untouched
+- [ ] `e2e/README.md` updated: local-first documented as the default for iteration; hosted path
+      still documented as valid
+- [ ] Verify: full suite run twice back-to-back locally, zero rate-limit errors either time;
+      `supabase db reset` between runs actually clears state; hosted project untouched
 
 ---
 
