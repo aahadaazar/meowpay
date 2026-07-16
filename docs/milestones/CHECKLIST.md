@@ -90,12 +90,23 @@ Everything below had been authored but never compiled or executed, so none of it
 - [ ] **M3 verify (UI half)** — the *backend* path is proven by `AuthAndCatManagementIntegrationTests`
       (human creates cats, each funded with 500, RLS isolates humans). The dashboard walkthrough needs
       a running app + live Supabase.
-- [ ] **`.env` credentials** — Supabase URL, anon key, `SUPABASE_DB_URL` (Session Pooler, IPv4),
-      `SUPABASE_JWT_SECRET`, `GROQ_API_KEY`. *Not needed for the backend suite* — it uses an ephemeral
-      Testcontainers Postgres — but required for any live run.
 - [ ] **Confirm Supabase JWT signing mode** (HS256 vs JWKS) in project Auth settings — carried from
       M3. The decoder handles either; the live mode is still unconfirmed.
 - [ ] **Docker Compose** not yet run.
+
+### Resolved — migrations applied to the live Supabase project (2026-07-16)
+- [x] **`.env` credentials** — Supabase URL, anon key, `SUPABASE_DB_URL` (Session Pooler),
+      `SUPABASE_JWT_SECRET`, `GROQ_API_KEY` were all already present in `.env`.
+- [x] **All 7 migrations (`0001`–`0007`) applied against the real project**, in order, via
+      `psql` (run through a throwaway `postgres:16-alpine` container over the Session Pooler
+      connection string, since no local `psql`/Supabase CLI is installed on this host). Until
+      now, migrations had only ever run against the ephemeral Testcontainers Postgres inside
+      the backend test suite — the live project's `public` schema was empty, which is why no
+      tables were visible in the Supabase dashboard. Verified after: `humans`, `cats`,
+      `wallets`, `transfers`, `ledger_entries` all exist with `rowsecurity = true`.
+- [x] Confirmed migration `0007`'s `ALTER PUBLICATION supabase_realtime ADD TABLE ...` needed
+      **no** workaround here — real Supabase provisions that publication at project bootstrap,
+      unlike the ephemeral test Postgres (bug 5 above only affected the test harness).
 
 ### Flags for M10 (fresh-clone reproducibility)
 The brief explicitly checks that *"the repo is public and runs from a fresh clone"*:
