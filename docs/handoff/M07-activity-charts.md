@@ -29,6 +29,8 @@
 - `derive.test.ts` covers daily buckets, grants and top-ups, recipient totals and the `Other`
   fold, own-cat net-zero aggregate flow, plus empty, sparse, and dense ledger inputs. Tests were
   authored but deliberately not run, per the repository execution instructions.
+- The full backend suite was rerun as a regression check after M7: **17 tests, 0 failures**.
+  M7 deliberately adds no backend surface, so this does not replace the deferred frontend tests.
 - The required palette validation was attempted in both light and dark modes, but the environment
   has no `node` executable. `npm` resolves to a Windows installation but cannot supply the
   missing runtime.
@@ -42,6 +44,7 @@
 - `4992c2d feat(m7): derive activity chart data from ledger`
 - `ca89079 feat(m7): add realtime activity chart cards`
 - `7c68879 docs(m7): mark activity charts done`
+- `6959247 docs(m7): mark activity charts done, record backend regression check`
 
 ## Next milestone
 
