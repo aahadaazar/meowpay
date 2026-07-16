@@ -2,6 +2,7 @@
 
 import { useCallback, useState } from "react";
 import { CatCard } from "@/components/cat-card";
+import { ActivityCharts } from "@/components/charts/activity-charts";
 import { LedgerTrail } from "@/components/ledger-trail";
 import { NewCatDialog } from "@/components/new-cat-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
@@ -81,6 +82,7 @@ export function RealtimeDashboard({ displayName, initialCats, initialEntries, in
       <TotalHero cats={cats} entries={entries} />
       {cats.length === 0 ? <section className="product-mockup-card grid justify-items-center gap-4 py-12 text-center"><h2 className="text-display-sm">Create your first cat</h2><p className="max-w-md text-body-md text-body">Each cat gets a wallet and 500 welcome treats to begin with.</p><button className="button-primary" onClick={() => setIsDialogOpen(true)} type="button">Create your first cat</button></section> : <section aria-label="Cat wallets" className="grid gap-4 md:grid-cols-2">{cats.map((cat) => <CatCard cat={cat} key={cat.id} onTopUp={submitTopUp} />)}</section>}
       <ManualTransferForm ownedCats={cats} onSubmitTransfer={submitTransfer} recipientCats={recipientCats} />
+      <ActivityCharts entries={entries} />
       <LedgerTrail cats={cats} entries={entries} />
     </div>
     <NewCatDialog isOpen={isDialogOpen} isSubmitting={isSubmitting} onClose={() => setIsDialogOpen(false)} onCreate={create} />
