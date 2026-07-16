@@ -14,3 +14,5 @@ app:
       jwk-set-uri: ${SUPABASE_JWT_JWK_SET_URI:}
   cors:
     allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
+  topup:
+    max: ${TOPUP_MAX:1000}

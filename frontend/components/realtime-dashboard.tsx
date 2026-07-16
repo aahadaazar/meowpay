@@ -10,7 +10,7 @@ import { ManualTransferForm } from "@/components/transfer-composer/manual-transf
 import type { CatOption } from "@/components/transfer-composer/types";
 import { useRealtimeLedger } from "@/hooks/use-realtime-ledger";
 import { useRealtimeWallets } from "@/hooks/use-realtime-wallets";
-import { createCat, executeTransfer, type CatSummary, type ExecuteTransferInput } from "@/lib/api";
+import { createCat, executeTransfer, topUp, type CatSummary, type ExecuteTransferInput, type TopupInput } from "@/lib/api";
 import { ledgerEntryFromRow, sortLedgerEntries, type DashboardCat, type LedgerEntry, type WalletRealtimeRow } from "@/lib/dashboard-types";
 import { createClient } from "@/lib/supabase/client";
 
@@ -67,13 +67,19 @@ export function RealtimeDashboard({ displayName, initialCats, initialEntries, in
     return executeTransfer(session.access_token, input);
   }
 
+  async function submitTopUp(input: TopupInput) {
+    const { data: { session } } = await createClient().auth.getSession();
+    if (!session) throw new Error("Your session has expired. Please sign in again.");
+    return topUp(session.access_token, input);
+  }
+
   return <main className="min-h-screen bg-background text-foreground">
     <header className="border-b border-border"><div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"><a className="text-title-md font-semibold" href="/dashboard">MeowPay</a><div className="flex items-center gap-3"><span className="hidden text-body-sm text-muted-foreground sm:inline">{displayName}</span><ThemeToggle /></div></div></header>
     <div className="mx-auto grid w-full max-w-7xl gap-section px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-caption-uppercase uppercase text-muted-foreground">Your cat wallets</p><h1 className="mt-2 text-display-sm">A treat account for every cat</h1></div><button className="button-primary" onClick={() => setIsDialogOpen(true)} type="button">New cat</button></div>
       {error ? <p className="text-body-sm text-destructive" role="alert">{error}</p> : null}
       <TotalHero cats={cats} entries={entries} />
-      {cats.length === 0 ? <section className="product-mockup-card grid justify-items-center gap-4 py-12 text-center"><h2 className="text-display-sm">Create your first cat</h2><p className="max-w-md text-body-md text-body">Each cat gets a wallet and 500 welcome treats to begin with.</p><button className="button-primary" onClick={() => setIsDialogOpen(true)} type="button">Create your first cat</button></section> : <section aria-label="Cat wallets" className="grid gap-4 md:grid-cols-2">{cats.map((cat) => <CatCard cat={cat} key={cat.id} />)}</section>}
+      {cats.length === 0 ? <section className="product-mockup-card grid justify-items-center gap-4 py-12 text-center"><h2 className="text-display-sm">Create your first cat</h2><p className="max-w-md text-body-md text-body">Each cat gets a wallet and 500 welcome treats to begin with.</p><button className="button-primary" onClick={() => setIsDialogOpen(true)} type="button">Create your first cat</button></section> : <section aria-label="Cat wallets" className="grid gap-4 md:grid-cols-2">{cats.map((cat) => <CatCard cat={cat} key={cat.id} onTopUp={submitTopUp} />)}</section>}
       <ManualTransferForm ownedCats={cats} onSubmitTransfer={submitTransfer} recipientCats={recipientCats} />
       <LedgerTrail cats={cats} entries={entries} />
     </div>

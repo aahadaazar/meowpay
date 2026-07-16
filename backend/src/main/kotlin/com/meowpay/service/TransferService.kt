@@ -1,8 +1,10 @@
 package com.meowpay.service
 
 import com.meowpay.dto.ExecuteTransferRequest
+import com.meowpay.dto.TopupRequest
 import com.meowpay.dto.TransferResponse
 import com.meowpay.exception.BadRequestException
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.jdbc.core.simple.JdbcClient
 import org.springframework.stereotype.Service
@@ -15,11 +17,48 @@ import java.util.UUID
 class TransferService(
     private val jdbcClient: JdbcClient,
     private val ownershipGuard: OwnershipGuard,
+    @Value("\${app.topup.max:1000}") private val topupMax: Long = 1000,
 ) {
     fun execute(humanId: UUID, request: ExecuteTransferRequest): TransferResponse {
         val source = normalizeClientSource(request.source)
         ownershipGuard.requireOwnedSender(humanId, request.senderCatId)
         ownershipGuard.requireNonSystemRecipient(request.receiverCatId)
+
+        return executeTransfer(
+            idempotencyKey = request.idempotencyKey,
+            senderCatId = request.senderCatId,
+            receiverCatId = request.receiverCatId,
+            amount = request.amount,
+            note = request.note,
+            source = source,
+            initiatedBy = humanId,
+        )
+    }
+
+    fun topUp(humanId: UUID, request: TopupRequest): TransferResponse {
+        ownershipGuard.requireOwnedCat(humanId, request.catId)
+        validateTopupAmount(request.amount)
+
+        return executeTransfer(
+            idempotencyKey = request.idempotencyKey,
+            senderCatId = treasuryCatId,
+            receiverCatId = request.catId,
+            amount = request.amount,
+            note = null,
+            source = "topup",
+            initiatedBy = humanId,
+        )
+    }
+
+    private fun executeTransfer(
+        idempotencyKey: UUID,
+        senderCatId: UUID,
+        receiverCatId: UUID,
+        amount: Long,
+        note: String?,
+        source: String,
+        initiatedBy: UUID,
+    ): TransferResponse {
 
         return jdbcClient.sql(
             """
@@ -35,15 +74,31 @@ class TransferService(
             )
             """.trimIndent(),
         )
-            .param("idempotencyKey", request.idempotencyKey)
-            .param("senderCatId", request.senderCatId)
-            .param("receiverCatId", request.receiverCatId)
-            .param("amount", request.amount)
-            .param("note", request.note?.trim()?.ifBlank { null })
+            .param("idempotencyKey", idempotencyKey)
+            .param("senderCatId", senderCatId)
+            .param("receiverCatId", receiverCatId)
+            .param("amount", amount)
+            .param("note", note?.trim()?.ifBlank { null })
             .param("source", source)
-            .param("initiatedBy", humanId)
+            .param("initiatedBy", initiatedBy)
             .query(transferMapper)
             .single()
+    }
+
+    private fun validateTopupAmount(amount: Long) {
+        if (amount !in topupAmounts) {
+            throw BadRequestException(
+                "topup_amount_not_allowed",
+                "amount must be one of: ${topupAmounts.sorted().joinToString()}.",
+            )
+        }
+
+        if (amount > topupMax) {
+            throw BadRequestException(
+                "topup_cap_exceeded",
+                "amount exceeds the server-side top-up cap.",
+            )
+        }
     }
 
     private fun normalizeClientSource(rawSource: String?): String {
@@ -73,6 +128,8 @@ class TransferService(
     private companion object {
         val clientSources = setOf("manual", "agent")
         val serverOnlySources = setOf("topup", "welcome_grant")
+        val topupAmounts = setOf(100L, 500L, 1000L)
+        val treasuryCatId: UUID = UUID.fromString("00000000-0000-4000-8000-000000000001")
 
         val transferMapper = RowMapper { rs: ResultSet, _: Int ->
             TransferResponse(

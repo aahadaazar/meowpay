@@ -1,6 +1,7 @@
 package com.meowpay
 
 import com.meowpay.dto.ExecuteTransferRequest
+import com.meowpay.dto.TopupRequest
 import com.meowpay.exception.BadRequestException
 import com.meowpay.exception.ForbiddenException
 import com.meowpay.service.OwnershipGuard
@@ -268,6 +269,42 @@ class LedgerCoreIntegrationTests {
     }
 
     @Test
+    fun `top up accepts presets preserves conservation and enforces ownership plus server policy`() {
+        val alice = createHuman("Alice")
+        val bob = createHuman("Bob")
+        val aliceCat = createCat(alice, "Milo")
+        val bobCat = createCat(bob, "Nori")
+        val treasuryBefore = balance(treasuryCatId)
+
+        listOf(100L, 500L, 1000L).forEach { amount ->
+            val transfer = transferService.topUp(alice, topupRequest(aliceCat, amount))
+            assertThat(transfer.status).isEqualTo("completed")
+            assertThat(transfer.source).isEqualTo("topup")
+        }
+
+        assertThat(balance(aliceCat)).isEqualTo(2100)
+        assertThat(balance(treasuryCatId)).isEqualTo(treasuryBefore - 1600)
+        assertWalletReconciliation()
+        assertGlobalConservation()
+
+        assertThatThrownBy {
+            transferService.topUp(alice, topupRequest(aliceCat, 200))
+        }.isInstanceOf(BadRequestException::class.java)
+            .hasMessageContaining("100, 500, 1000")
+
+        val cappedTopupService = TransferService(jdbcClient, OwnershipGuard(jdbcClient), 500)
+        assertThatThrownBy {
+            cappedTopupService.topUp(alice, topupRequest(aliceCat, 1000))
+        }.isInstanceOf(BadRequestException::class.java)
+            .hasMessageContaining("server-side top-up cap")
+
+        assertThatThrownBy {
+            transferService.topUp(alice, topupRequest(bobCat, 100))
+        }.isInstanceOf(ForbiddenException::class.java)
+            .hasMessageContaining("catId is not owned")
+    }
+
+    @Test
     fun `create cat is atomic and welcome grant reconciles`() {
         val alice = createHuman("Alice")
 
@@ -362,6 +399,12 @@ class LedgerCoreIntegrationTests {
         amount = amount,
         note = "snack",
         source = source,
+    )
+
+    private fun topupRequest(catId: UUID, amount: Long) = TopupRequest(
+        idempotencyKey = UUID.randomUUID(),
+        catId = catId,
+        amount = amount,
     )
 
     private fun balance(catId: UUID): Long =

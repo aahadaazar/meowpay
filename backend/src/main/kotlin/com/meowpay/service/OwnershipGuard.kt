@@ -11,7 +11,21 @@ class OwnershipGuard(
     private val jdbcClient: JdbcClient,
 ) {
     fun requireOwnedSender(humanId: UUID, senderCatId: UUID) {
-        val ownsSender = jdbcClient.sql(
+        requireOwnedCat(
+            humanId = humanId,
+            catId = senderCatId,
+            code = "sender_not_owned",
+            message = "senderCatId is not owned by the authenticated human.",
+        )
+    }
+
+    fun requireOwnedCat(
+        humanId: UUID,
+        catId: UUID,
+        code: String = "cat_not_owned",
+        message: String = "catId is not owned by the authenticated human.",
+    ) {
+        val ownsCat = jdbcClient.sql(
             """
             SELECT EXISTS (
                 SELECT 1
@@ -22,16 +36,13 @@ class OwnershipGuard(
             )
             """.trimIndent(),
         )
-            .param("catId", senderCatId)
+            .param("catId", catId)
             .param("humanId", humanId)
             .query(Boolean::class.java)
             .single()
 
-        if (!ownsSender) {
-            throw ForbiddenException(
-                "sender_not_owned",
-                "senderCatId is not owned by the authenticated human.",
-            )
+        if (!ownsCat) {
+            throw ForbiddenException(code, message)
         }
     }
 

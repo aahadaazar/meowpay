@@ -26,8 +26,20 @@ export type ExecuteTransferInput = {
   source: "manual" | "agent";
 };
 
-export type TransferResponse = ExecuteTransferInput & {
+export type TopupInput = {
+  idempotencyKey: string;
+  catId: string;
+  amount: 100 | 500 | 1000;
+};
+
+export type TransferResponse = {
   id: string;
+  idempotencyKey: string;
+  senderCatId: string;
+  receiverCatId: string;
+  amount: number;
+  note: string | null;
+  source: "manual" | "agent" | "topup" | "welcome_grant";
   initiatedBy: string | null;
   status: "completed" | "failed";
   failureReason: string | null;
@@ -87,4 +99,11 @@ export async function executeTransfer(accessToken: string, input: ExecuteTransfe
   }
 
   return body as TransferResponse;
+}
+
+export function topUp(accessToken: string, input: TopupInput): Promise<TransferResponse> {
+  return request<TransferResponse>("/wallet/topup", accessToken, {
+    method: "POST",
+    body: JSON.stringify(input),
+  });
 }
