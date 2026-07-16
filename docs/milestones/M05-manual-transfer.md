@@ -1,6 +1,6 @@
 # M5 — Manual transfer
 
-**Type:** fullstack · **Status:** in progress
+**Type:** fullstack · **Status:** done
 **ADRs:** none new — exercises [0008](../adr/0008-atomic-plpgsql-transfer.md),
 [0009](../adr/0009-idempotency-and-status.md), [0012](../adr/0012-rls-ownership-subquery.md)
 
@@ -31,3 +31,8 @@ shows both legs.
 ## Progress log
 
 - 2026-07-16 — started. Reviewing transfer contracts and the existing realtime dashboard read model.
+- 2026-07-16 — done. Commits 2db8990..4b6a999 add the manual composer, reusable confirm dialog,
+  idempotent intent key, Sonner outcomes, and backend/frontend coverage. Frontend TypeScript
+  validation passed; test suites were authored but not run. Verify step could not run: the live
+  environment has the existing Supabase configuration but no Java/JAVA_HOME, so the backend
+  cannot start (`./gradlew bootRun` exits before application startup).
