@@ -24,7 +24,7 @@ plus git history is the source of truth for progress.
 | [M3](milestones/M03-auth-and-cat-management.md) | Auth & cat management | fullstack | done | [0011](adr/0011-auth-boundary.md) · [0012](adr/0012-rls-ownership-subquery.md) |
 | [M4](milestones/M04-realtime-dashboard.md) | Realtime dashboard: total, cats, trail | fullstack | done | [0013](adr/0013-realtime-scoping-via-rls.md) |
 | [M5](milestones/M05-manual-transfer.md) | Manual transfer | fullstack | done | — (exercises 0008/0009/0012) |
-| [M6](milestones/M06-topup.md) | Top-up | fullstack | in progress | [0014](adr/0014-topup-as-treasury-transfer.md) |
+| [M6](milestones/M06-topup.md) | Top-up | fullstack | done | [0014](adr/0014-topup-as-treasury-transfer.md) |
 | [M7](milestones/M07-activity-charts.md) | Activity charts | fullstack | not started | [0015](adr/0015-client-side-chart-derivation.md) |
 | [M8](milestones/M08-agentic-nl-composer.md) | Agentic NL composer | fullstack | not started | [0016](adr/0016-agent-proposes-human-confirms.md) · [0017](adr/0017-groq-model-split.md) |
 | [M9](milestones/M09-agentic-activity-insight.md) | Agentic activity insight | fullstack | not started | [0018](adr/0018-tool-use-data-scoping.md) |
