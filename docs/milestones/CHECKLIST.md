@@ -1,7 +1,7 @@
 # MeowPay — Milestone Checklist
 
-**6 of 11 complete.** M0–M5 done; M6–M10 not started.
-**Backend suite green — 16 tests, 0 failures** (2026-07-16). Frontend tests deferred.
+**7 of 11 complete.** M0–M6 done; M7–M10 not started.
+**Backend suite green — 17 tests, 0 failures** (2026-07-16). Frontend tests deferred.
 
 | | Milestone | Type | Status |
 |---|---|---|---|
@@ -11,7 +11,7 @@
 | M3 | [Auth & cat management](M03-auth-and-cat-management.md) | fullstack | ✅ done |
 | M4 | [Realtime dashboard](M04-realtime-dashboard.md) | fullstack | ✅ done |
 | M5 | [Manual transfer](M05-manual-transfer.md) | fullstack | ✅ done |
-| M6 | [Top-up](M06-topup.md) | fullstack | ⬜ not started |
+| M6 | [Top-up](M06-topup.md) | fullstack | ✅ done |
 | M7 | [Activity charts](M07-activity-charts.md) | fullstack | ⬜ not started |
 | M8 | [Agentic NL composer](M08-agentic-nl-composer.md) | fullstack | ⬜ not started |
 | M9 | [Agentic activity insight](M09-agentic-activity-insight.md) | fullstack | ⬜ not started |
@@ -21,12 +21,12 @@
 
 ## ✅ Verification status
 
-**The backend suite is green — 16 tests, 0 failures, 0 skipped** (2026-07-16). The compounded
-verification debt across M0–M5 is now cleared on the backend side.
+**The backend suite is green — 17 tests, 0 failures, 0 skipped** (2026-07-16). The compounded
+verification debt across M0–M6 is now cleared on the backend side.
 
 | Suite | Milestone | Tests | Result |
 |---|---|---|---|
-| `LedgerCoreIntegrationTests` | M2 | 9 | ✅ |
+| `LedgerCoreIntegrationTests` | M2 (+ M6 top-up case) | 10 | ✅ |
 | `AuthAndCatManagementIntegrationTests` | M3 | 4 | ✅ |
 | `TransferControllerTests` | M5 | 1 | ✅ |
 | `SecurityConfigTests` | M0 | 1 | ✅ |
@@ -41,6 +41,13 @@ exercised implicitly by the two integration suites above, which replay every fil
 client-supplied `senderCatId`) is proven by `TransferControllerTests`. Its frontend tests
 (validation, confirm→submit fires once, `failure_reason` surfaced verbatim) were authored but
 are deferred, matching the standing frontend-test deferral for M0–M4.
+
+**M6 — top-up's server-side policy checks** (preset allowlist, server cap, ownership of the
+target cat, and conservation across the treasury-backed mint) are proven by a single test added
+to `LedgerCoreIntegrationTests`: *"top up accepts presets preserves conservation and enforces
+ownership plus server policy"* — passes. Its frontend tests (`topup-presets.test.tsx`: pills
+render/submit, row wraps above the 44px touch target) were authored but deferred, matching the
+standing frontend-test deferral.
 
 **M2 — the centerpiece — is now proven.** Its doc says it is *"proven entirely by its test suite"*,
 and that suite now passes against a real Postgres with the real migrations applied. Both invariants
@@ -158,14 +165,17 @@ done — see [M04-realtime-dashboard.md](M04-realtime-dashboard.md) and
 - [ ] Verify: send between your own two cats — total hero **stays constant**, both cards move,
       trail shows both legs — not run (no live app walkthrough this session)
 
-### ⬜ M6 — Top-up `fullstack` · ADR 0014
-- [ ] `POST /api/wallet/topup { idempotencyKey, catId, amount }` → validates cat ownership +
+### ✅ M6 — Top-up `fullstack` · ADR 0014
+- [x] `POST /api/wallet/topup { idempotencyKey, catId, amount }` → validates cat ownership +
       preset allowlist + server cap → `execute_transfer(treasury → cat, source='topup')`
-- [ ] Preset pills (+100/+500/+1000) on each cat card
-- [ ] Tests: presets succeed; off-allowlist/over-cap rejected; **topping up a cat that isn't yours
-      rejected**; **conservation preserved**; treasury goes negative by exactly the minted amount
-- [ ] Test: pill row **wraps** rather than shrinking below the 44px touch target
-- [ ] Verify: top up an empty wallet — balance and total update live
+- [x] Preset pills (+100/+500/+1000) on each cat card
+- [x] Tests: presets succeed; off-allowlist/over-cap rejected; **topping up a cat that isn't yours
+      rejected**; **conservation preserved**; treasury goes negative by exactly the minted amount —
+      backend run, passes (`LedgerCoreIntegrationTests`)
+- [ ] Test: pill row **wraps** rather than shrinking below the 44px touch target — authored,
+      frontend run deferred
+- [ ] Verify: top up an empty wallet — balance and total update live — not run (no live app
+      walkthrough this session)
 
 ### ⬜ M7 — Activity charts `fullstack` · ADR 0015
 - [ ] `treat-flow-chart` — diverging column, zero-centered, credits above / debits below
