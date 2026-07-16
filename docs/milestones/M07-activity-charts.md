@@ -1,6 +1,6 @@
 # M7 — Activity charts
 
-**Type:** fullstack · **Status:** in progress
+**Type:** fullstack · **Status:** done
 **ADR:** [0015](../adr/0015-client-side-chart-derivation.md)
 
 ## Scope
@@ -31,3 +31,7 @@ themes — the same layout check M1 establishes.
 ## Progress log
 
 - 2026-07-16 — started. Reading chart and design decisions; implementation pending.
+- 2026-07-16 — done. Added the pure client-side derivation and its unit tests, plus responsive
+  realtime chart cards. Commits aff534a..ca89079. The required palette validator was attempted,
+  but Node.js is unavailable; frontend tests remain unrun per instruction and the 375 / 768 /
+  1440px visual pass cannot run without a frontend runtime. No backend endpoint was added.
