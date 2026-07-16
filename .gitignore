@@ -59,6 +59,15 @@ temp/
 # Testing
 .nyc_output/
 junit.xml
+test-results/
+playwright-report/
+blob-report/
+*snapshots*
+*.lcov
+
+# Playwright local cache/output
+.playwright/
+e2e/.playwright/
 
 # Misc
 *.pdf
