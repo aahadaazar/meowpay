@@ -1,6 +1,6 @@
 # M6 — Top-up
 
-**Type:** fullstack · **Status:** not started
+**Type:** fullstack · **Status:** in progress
 **ADR:** [0014](../adr/0014-topup-as-treasury-transfer.md)
 
 ## Scope
