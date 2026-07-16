@@ -1,7 +1,7 @@
 # MeowPay — Milestone Checklist
 
-**5 of 11 complete.** M0–M4 done; M5–M10 not started.
-**Backend suite green — 15 tests, 0 failures** (2026-07-16). Frontend tests deferred.
+**6 of 11 complete.** M0–M5 done; M6–M10 not started.
+**Backend suite green — 16 tests, 0 failures** (2026-07-16). Frontend tests deferred.
 
 | | Milestone | Type | Status |
 |---|---|---|---|
@@ -10,7 +10,7 @@
 | M2 | [Ledger core](M02-ledger-core.md) | enabler (BE+DB) | ✅ done |
 | M3 | [Auth & cat management](M03-auth-and-cat-management.md) | fullstack | ✅ done |
 | M4 | [Realtime dashboard](M04-realtime-dashboard.md) | fullstack | ✅ done |
-| M5 | [Manual transfer](M05-manual-transfer.md) | fullstack | ⬜ not started |
+| M5 | [Manual transfer](M05-manual-transfer.md) | fullstack | ✅ done |
 | M6 | [Top-up](M06-topup.md) | fullstack | ⬜ not started |
 | M7 | [Activity charts](M07-activity-charts.md) | fullstack | ⬜ not started |
 | M8 | [Agentic NL composer](M08-agentic-nl-composer.md) | fullstack | ⬜ not started |
@@ -21,13 +21,14 @@
 
 ## ✅ Verification status
 
-**The backend suite is green — 15 tests, 0 failures, 0 skipped** (2026-07-16). The compounded
-verification debt across M0–M4 is now cleared on the backend side.
+**The backend suite is green — 16 tests, 0 failures, 0 skipped** (2026-07-16). The compounded
+verification debt across M0–M5 is now cleared on the backend side.
 
 | Suite | Milestone | Tests | Result |
 |---|---|---|---|
 | `LedgerCoreIntegrationTests` | M2 | 9 | ✅ |
 | `AuthAndCatManagementIntegrationTests` | M3 | 4 | ✅ |
+| `TransferControllerTests` | M5 | 1 | ✅ |
 | `SecurityConfigTests` | M0 | 1 | ✅ |
 | `MeowPayApplicationTests` | M0 | 1 | ✅ |
 
@@ -35,6 +36,11 @@ M4 added no new backend test suite (its authored tests are frontend-only: realti
 sort, 768px collapse). Its only backend surface is migration `0007_realtime_publication.sql`,
 exercised implicitly by the two integration suites above, which replay every file in
 `supabase/migrations` against the ephemeral Testcontainers Postgres — see bug 5 below.
+
+**M5 — the sender-ownership authorization check** (the key new authz surface introduced by a
+client-supplied `senderCatId`) is proven by `TransferControllerTests`. Its frontend tests
+(validation, confirm→submit fires once, `failure_reason` surfaced verbatim) were authored but
+are deferred, matching the standing frontend-test deferral for M0–M4.
 
 **M2 — the centerpiece — is now proven.** Its doc says it is *"proven entirely by its test suite"*,
 and that suite now passes against a real Postgres with the real migrations applied. Both invariants
@@ -134,20 +140,23 @@ M4 (dashboard)  ──┬── M5 (manual transfer) ── M8 (NL composer, reu
                   └── M9 (insight, largely independent)
                                                               all ──> M10 (package)
 ```
-Critical path: **M4 → M5 → M8 → M10.** M6, M7, M9 can slot in anywhere after M4. M4 is done — see
-[M04-realtime-dashboard.md](M04-realtime-dashboard.md).
+Critical path: **M4 → M5 → M8 → M10.** M6, M7, M9 can slot in anywhere after M4. M4 and M5 are
+done — see [M04-realtime-dashboard.md](M04-realtime-dashboard.md) and
+[M05-manual-transfer.md](M05-manual-transfer.md).
 
 ---
 
-### ⬜ M5 — Manual transfer `fullstack` · exercises ADR 0008/0009/0012
-- [ ] Send form (`react-hook-form` + `zod`): From [my cat] → To [any other cat], amount, note
-- [ ] Confirm `Dialog` — **M8 reuses this exact dialog**
-- [ ] `Sonner` toast
-- [ ] **Idempotency key generated when the confirm dialog opens** — not per HTTP request
-- [ ] Test: **rejects a sender cat the caller doesn't own** ← the key new authz check
-- [ ] Tests: validation; confirm→submit fires exactly once; failure surfaces `failure_reason`
+### ✅ M5 — Manual transfer `fullstack` · exercises ADR 0008/0009/0012
+- [x] Send form (`react-hook-form` + `zod`): From [my cat] → To [any other cat], amount, note
+- [x] Confirm `Dialog` — **M8 reuses this exact dialog**
+- [x] `Sonner` toast
+- [x] **Idempotency key generated when the confirm dialog opens** — not per HTTP request
+- [x] Test: **rejects a sender cat the caller doesn't own** ← the key new authz check — backend
+      run, passes (`TransferControllerTests`)
+- [x] Tests: validation; confirm→submit fires exactly once; failure surfaces `failure_reason` —
+      authored, frontend run deferred
 - [ ] Verify: send between your own two cats — total hero **stays constant**, both cards move,
-      trail shows both legs
+      trail shows both legs — not run (no live app walkthrough this session)
 
 ### ⬜ M6 — Top-up `fullstack` · ADR 0014
 - [ ] `POST /api/wallet/topup { idempotencyKey, catId, amount }` → validates cat ownership +

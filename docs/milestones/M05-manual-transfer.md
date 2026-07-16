@@ -36,3 +36,6 @@ shows both legs.
   validation passed; test suites were authored but not run. Verify step could not run: the live
   environment has the existing Supabase configuration but no Java/JAVA_HOME, so the backend
   cannot start (`./gradlew bootRun` exits before application startup).
+- 2026-07-16 — backend tests run. `TransferControllerTests` (the sender-ownership authz check)
+  passes alongside the full backend suite — 16 tests, 0 failures. Frontend tests deferred per
+  the standing CHECKLIST decision. Verify step (live app walkthrough) still not run.
