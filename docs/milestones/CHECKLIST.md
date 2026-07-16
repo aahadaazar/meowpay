@@ -350,15 +350,16 @@ is schedule, not dependency, driven. Resume with M8 once the testing backlog is 
 ### ⬜ M11 — e2e suite against local Supabase `tooling` · ADR 0020
 Added 2026-07-16, after the hosted-project e2e run above hit Supabase's admin-API rate limit
 mid-session. Full detail: [M11-e2e-local-supabase.md](M11-e2e-local-supabase.md).
-- [ ] `supabase start` (Supabase CLI) stood up for local e2e use, migrations 0001–0007 applied
-      against it
-- [ ] New `e2e/.env.e2e` (or equivalent) carrying local Supabase's URL/anon/service-role keys
-- [ ] Compose override or separate `--env-file` path so backend+frontend point at local Supabase
-      **only during an e2e run** — default `docker compose up` / `npm run dev` untouched
-- [ ] `e2e/README.md` updated: local-first documented as the default for iteration; hosted path
-      still documented as valid
-- [ ] Verify: full suite run twice back-to-back locally, zero rate-limit errors either time;
-      `supabase db reset` between runs actually clears state; hosted project untouched
+- [x] Local `supabase/config.toml` added for e2e use; `supabase start` then
+      `supabase db reset --local` replays migrations 0001–0007 on a machine with the CLI
+- [x] New committed `e2e/.env.e2e` carries the local Supabase URL, anon key, and service-role key
+- [x] Separate `--env-file e2e/.env.e2e` compose path points both app services at local Supabase;
+      default `docker compose up` / `npm run dev` still resolve the root `.env`
+- [x] `e2e/README.md` documents local-first iteration, `supabase db reset`, and the hosted fallback
+- [~] Verify: Compose resolution passed for both env paths. The local stack and two Playwright runs
+      could not be attempted here because the Supabase CLI and host Node runtime are unavailable;
+      therefore local reset behavior and hosted-data isolation remain to be verified on a CLI-ready
+      machine.
 
 ---
 

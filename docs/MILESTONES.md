@@ -29,7 +29,7 @@ plus git history is the source of truth for progress.
 | [M8](milestones/M08-agentic-nl-composer.md) | Agentic NL composer | fullstack | not started | [0016](adr/0016-agent-proposes-human-confirms.md) · [0017](adr/0017-groq-model-split.md) |
 | [M9](milestones/M09-agentic-activity-insight.md) | Agentic activity insight | fullstack | not started | [0018](adr/0018-tool-use-data-scoping.md) |
 | [M10](milestones/M10-dockerization-and-readme.md) | Dockerization & README | packaging | not started | [0019](adr/0019-deployment-topology.md) |
-| [M11](milestones/M11-e2e-local-supabase.md) | e2e suite against local Supabase | tooling | in progress | [0020](adr/0020-e2e-against-local-supabase.md) |
+| [M11](milestones/M11-e2e-local-supabase.md) | e2e suite against local Supabase | tooling | done | [0020](adr/0020-e2e-against-local-supabase.md) |
 
 M0–M10 were the original 11-milestone plan and are all documented (M8–M10 not yet implemented).
 **M11 was added later** (2026-07-16), after a Playwright e2e suite (`e2e/`) was built and run

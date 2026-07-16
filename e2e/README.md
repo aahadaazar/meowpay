@@ -1,7 +1,7 @@
 # MeowPay — end-to-end tests (Playwright)
 
-Browser-driven tests against the real running stack (frontend + backend + the live hosted
-Supabase project in `.env`), covering the milestones marked `done` in
+Browser-driven tests against the real running stack (frontend + backend + a local Supabase
+instance by default), covering the milestones marked `done` in
 [`docs/MILESTONES.md`](../docs/MILESTONES.md): **M0, M1, M3–M7**. M2 has no UI of its own and is
 exercised implicitly through M5/M6. **M8, M9, M10 are not started and are out of scope.**
 
@@ -27,15 +27,47 @@ produces is genuinely JWT-valid and subject to the same backend (`SecurityConfig
 
 ## Setup
 
-1. In the repo root `.env`, set:
+### Local Supabase (default for local iteration)
+
+This path isolates e2e users, cats, and ledger rows from the hosted project and avoids its
+admin-API rate limit. It requires Docker and the [Supabase CLI](https://supabase.com/docs/guides/local-development).
+The committed `supabase/config.toml` and `e2e/.env.e2e` use the CLI's documented local ports and
+development keys; the latter contains no hosted credentials.
+
+1. From the repository root, start Supabase and apply the tracked migrations:
+   ```bash
+   supabase start
+   supabase db reset --local
    ```
-   E2E_TEST_MODE=true
-   SUPABASE_SERVICE_ROLE_KEY=...   # Project Settings → API → service_role, in the Supabase dashboard
+   `db reset` drops local state and replays `supabase/migrations/0001` through `0007`. Run it
+   before each independent e2e iteration; it is the standard teardown for this suite.
+2. In another terminal, boot the app stack with the e2e-only environment. This leaves the root
+   `.env` and the ordinary development path untouched:
+   ```bash
+   docker compose --env-file e2e/.env.e2e up --build
    ```
-2. Bring the stack up (`docker compose up --build`, or `npm run dev` + `./gradlew bootRun`).
-3. `cd e2e && npm install`
-4. Copy `.env.example` to `.env` if your ports differ from the defaults (`localhost:3000` /
-   `localhost:8080`).
+   The compose file reads `MEOWPAY_ENV_FILE` from that env file, so both app services receive
+   local Supabase settings. The backend reaches the CLI database through
+   `host.docker.internal:54322`; the Compose host-gateway mapping covers both Docker Desktop and
+   a Linux Docker Engine.
+3. Install the browser-test dependencies and optionally copy the runner override if ports differ:
+   ```bash
+   cd e2e
+   npm ci
+   cp .env.example .env
+   ```
+
+Use `docker compose --env-file e2e/.env.e2e config` to inspect the resolved local-only stack
+without starting containers. The e2e runner defaults to `http://localhost:3000` and
+`http://localhost:8080`, so no runner environment is required with the standard ports.
+
+### Hosted project (one-off compatibility check)
+
+The original hosted-project route remains available when it is intentionally needed. In the root
+`.env`, set `E2E_TEST_MODE=true` and the hosted project's `SUPABASE_SERVICE_ROLE_KEY`, then start
+the normal stack with `docker compose up --build` (or `npm run dev` + `./gradlew bootRun`). Do not
+use the e2e env-file override for this path. Hosted runs accumulate test data and can hit the
+admin-API rate limit, so local Supabase is the default for iteration.
 
 ## Running
 
@@ -57,10 +89,10 @@ baseline; otherwise a plain `npm test` diffs against the committed baselines.
 ## Test data
 
 Every run mints **fresh, uniquely-emailed test humans and uniquely-named cats**
-(`fixtures/ids.ts`) — nothing is reset or deleted between runs. This matches the product's own
-model: the ledger is append-only and audit-forever by design (ADR 0009), so accumulating rows in
-the configured Supabase project across runs is expected, not a leak to clean up. Point this suite
-at a scratch/dev Supabase project rather than a real production one.
+(`fixtures/ids.ts`). For local runs, reset with `supabase db reset --local` between independent
+iterations; this clears all test state and replays the same migrations. A hosted one-off run does
+not reset or delete data, so point it at a scratch/dev project rather than production and expect
+rows to accumulate.
 
 ## Layout
 
