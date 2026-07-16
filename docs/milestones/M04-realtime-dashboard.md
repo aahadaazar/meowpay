@@ -1,6 +1,6 @@
 # M4 — Realtime dashboard: total, cats, trail
 
-**Type:** fullstack · **Status:** in progress
+**Type:** fullstack · **Status:** done
 **ADR:** [0013](../adr/0013-realtime-scoping-via-rls.md)
 
 ## Scope
@@ -31,4 +31,8 @@ first real end-to-end moment: create a cat, watch its grant land live.
 
 ## Progress log
 
-- not started
+- 2026-07-16 — done. Commits afbf230..b2e007c add the RLS-scoped wallet and ledger realtime
+  dashboard, publication migration, and authored frontend tests. Verify step not run: the host
+  has no Java or Node runtime, the frontend and backend were not already running, and Docker
+  Compose was deliberately not run per user instruction. The required two-human RLS/realtime and
+  deployed Realtime filter checks remain pending against the configured Supabase project.

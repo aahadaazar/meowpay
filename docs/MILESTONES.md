@@ -22,7 +22,7 @@ plus git history is the source of truth for progress.
 | [M1](milestones/M01-design-system.md) | Design system | enabler | done | [0002](adr/0002-adopt-clay-design-system-and-extension-strategy.md) · [0003](adr/0003-dark-theme-extension.md) · [0004](adr/0004-chart-palette-derivation.md) · [0005](adr/0005-fluid-responsive-strategy.md) |
 | [M2](milestones/M02-ledger-core.md) | Ledger core — the centerpiece | enabler | done | [0006](adr/0006-ledger-first-money-movement.md) · [0007](adr/0007-treasury-backed-funding.md) · [0008](adr/0008-atomic-plpgsql-transfer.md) · [0009](adr/0009-idempotency-and-status.md) · [0010](adr/0010-actor-vs-account.md) |
 | [M3](milestones/M03-auth-and-cat-management.md) | Auth & cat management | fullstack | done | [0011](adr/0011-auth-boundary.md) · [0012](adr/0012-rls-ownership-subquery.md) |
-| [M4](milestones/M04-realtime-dashboard.md) | Realtime dashboard: total, cats, trail | fullstack | in progress | [0013](adr/0013-realtime-scoping-via-rls.md) |
+| [M4](milestones/M04-realtime-dashboard.md) | Realtime dashboard: total, cats, trail | fullstack | done | [0013](adr/0013-realtime-scoping-via-rls.md) |
 | [M5](milestones/M05-manual-transfer.md) | Manual transfer | fullstack | not started | — (exercises 0008/0009/0012) |
 | [M6](milestones/M06-topup.md) | Top-up | fullstack | not started | [0014](adr/0014-topup-as-treasury-transfer.md) |
 | [M7](milestones/M07-activity-charts.md) | Activity charts | fullstack | not started | [0015](adr/0015-client-side-chart-derivation.md) |
