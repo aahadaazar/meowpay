@@ -49,3 +49,9 @@ first real end-to-end moment: create a cat, watch its grant land live.
   [CHECKLIST.md](CHECKLIST.md) for the vitest `@/` path-alias fix three of this milestone's test
   files needed. The end-to-end welcome-grant verify walkthrough still needs a running app + live
   Supabase + a browser, which remains unavailable in this environment.
+- 2026-07-16 — fixed the Strict Mode Realtime double-subscribe race found by the live e2e run:
+  authenticated channels are retained across the development-only effect replay, and the ledger
+  reconciles after joining. Redacted payloads are ignored defensively. The full Playwright run now
+  passes all four M4 cases. Regression coverage was added to `use-realtime.test.tsx` and
+  `realtime-dashboard.test.tsx` but not rerun, because this request explicitly ran the e2e suite;
+  see [CHECKLIST.md](CHECKLIST.md) for the remaining unrelated suite failures.

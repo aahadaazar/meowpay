@@ -26,8 +26,22 @@ export function applyWalletChange(cats: DashboardCat[], wallet: WalletRealtimeRo
   return cats.map((cat) => cat.id === wallet.cat_id ? { ...cat, balance: Number(wallet.balance) } : cat);
 }
 
-export function applyLedgerChange(entries: LedgerEntry[], payload: { eventType: "INSERT" | "UPDATE" | "DELETE"; new: Parameters<typeof ledgerEntryFromRow>[0]; old: { id: string } }): LedgerEntry[] {
-  if (payload.eventType === "DELETE") return entries.filter((entry) => entry.id !== payload.old.id);
+function isLedgerRealtimeRow(row: unknown): row is Parameters<typeof ledgerEntryFromRow>[0] {
+  if (!row || typeof row !== "object") return false;
+
+  const candidate = row as Record<string, unknown>;
+  return typeof candidate.id === "string"
+    && candidate.id.length > 0
+    && typeof candidate.created_at === "string"
+    && !Number.isNaN(Date.parse(candidate.created_at));
+}
+
+export function applyLedgerChange(entries: LedgerEntry[], payload: { eventType: "INSERT" | "UPDATE" | "DELETE"; new: unknown; old: { id?: unknown } }): LedgerEntry[] {
+  if (payload.eventType === "DELETE") {
+    return typeof payload.old.id === "string" ? entries.filter((entry) => entry.id !== payload.old.id) : entries;
+  }
+  if (!isLedgerRealtimeRow(payload.new)) return entries;
+
   const nextEntry = ledgerEntryFromRow(payload.new);
   return sortLedgerEntries([...entries.filter((entry) => entry.id !== nextEntry.id), nextEntry]);
 }

@@ -22,4 +22,11 @@ describe("realtime dashboard state", () => {
     const result = applyLedgerChange([entry], { eventType: "INSERT", new: incoming, old: { id: incoming.id } });
     expect(result.map((item) => item.id)).toEqual(["entry-2", "entry-1"]);
   });
+
+  it("ignores a redacted realtime payload instead of adding an invalid ledger row", () => {
+    const entries = [entry];
+    const result = applyLedgerChange(entries, { eventType: "INSERT", new: {}, old: {} });
+
+    expect(result).toBe(entries);
+  });
 });
