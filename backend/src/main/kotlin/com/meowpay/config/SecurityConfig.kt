@@ -9,6 +9,7 @@ import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.http.SessionCreationPolicy
+import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm
 import org.springframework.security.oauth2.jwt.JwtDecoder
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
 import org.springframework.security.web.SecurityFilterChain
@@ -41,7 +42,14 @@ class SecurityConfig(
     @Bean
     fun jwtDecoder(): JwtDecoder {
         if (jwtProperties.jwkSetUri.isNotBlank()) {
-            return NimbusJwtDecoder.withJwkSetUri(jwtProperties.jwkSetUri).build()
+            // Supabase's asymmetric signing keys are RS256 or ES256; NimbusJwtDecoder otherwise
+            // defaults to trusting RS256 only and rejects a JWKS-published ES256 key outright.
+            return NimbusJwtDecoder.withJwkSetUri(jwtProperties.jwkSetUri)
+                .jwsAlgorithms { algorithms ->
+                    algorithms.add(SignatureAlgorithm.RS256)
+                    algorithms.add(SignatureAlgorithm.ES256)
+                }
+                .build()
         }
 
         if (jwtProperties.secret.isNotBlank()) {
