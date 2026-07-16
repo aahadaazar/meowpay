@@ -55,3 +55,7 @@ One human creates two cats; both appear on the dashboard with 500 treats each.
   - Knock-on: this milestone's `CatService` broke M0's context tests, which asserted the app boots
     without a datasource. See M0's log.
   UI verify (dashboard walkthrough) still needs a running app + live Supabase. Frontend tests deferred.
+- 2026-07-16 — frontend suite run (Node.js became available this session). `login-form.test.tsx`
+  and `cat-management-dashboard.test.tsx` pass, alongside the rest of the 24-test frontend suite —
+  see [CHECKLIST.md](CHECKLIST.md). The UI dashboard walkthrough still needs a running app + live
+  Supabase + a browser, which remains unavailable in this environment.

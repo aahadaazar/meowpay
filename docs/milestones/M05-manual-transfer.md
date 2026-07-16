@@ -39,3 +39,7 @@ shows both legs.
 - 2026-07-16 — backend tests run. `TransferControllerTests` (the sender-ownership authz check)
   passes alongside the full backend suite — 16 tests, 0 failures. Frontend tests deferred per
   the standing CHECKLIST decision. Verify step (live app walkthrough) still not run.
+- 2026-07-16 — frontend suite run (Node.js became available this session). `manual-transfer-form.test.tsx`
+  passes (validation, confirm→submit fires exactly once, `failure_reason` surfaced verbatim) —
+  see [CHECKLIST.md](CHECKLIST.md) for the `vi.mock` hoisting fix this file needed. The live app
+  walkthrough still needs a browser, which remains unavailable in this environment.

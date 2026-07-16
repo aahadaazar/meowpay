@@ -41,3 +41,7 @@ empty shell.
   alternative — making services `@ConditionalOnBean` so the app boots degraded without its ledger —
   would have shaped production wiring around a test premise.) Frontend half of verify (app boots) is
   still outstanding; frontend tests deferred.
+- 2026-07-16 — frontend suite run (Node.js became available this session). All 12 vitest files
+  pass, 24 tests, 0 failures — see [CHECKLIST.md](CHECKLIST.md) for the five harness bugs fixed
+  to get there. The frontend app-boot half of verify still needs a browser, which remains
+  unavailable in this environment.

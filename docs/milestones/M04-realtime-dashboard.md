@@ -44,3 +44,8 @@ first real end-to-end moment: create a cat, watch its grant land live.
   exist`. Fixed by creating that publication in both integration test harnesses before migrations
   run, matching the existing `anon`/`authenticated` role emulation. Suite now green, 15/15. See
   bug 5 in [CHECKLIST.md](CHECKLIST.md).
+- 2026-07-16 — frontend suite run (Node.js became available this session). `use-realtime.test.tsx`,
+  `ledger-trail.test.tsx`, and `realtime-dashboard.test.tsx` all pass — see
+  [CHECKLIST.md](CHECKLIST.md) for the vitest `@/` path-alias fix three of this milestone's test
+  files needed. The end-to-end welcome-grant verify walkthrough still needs a running app + live
+  Supabase + a browser, which remains unavailable in this environment.

@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { vi } from "vitest";
 import { ManualTransferForm } from "./manual-transfer-form";
 
-const toast = { error: vi.fn(), success: vi.fn() };
+const { toast } = vi.hoisted(() => ({ toast: { error: vi.fn(), success: vi.fn() } }));
 vi.mock("sonner", () => ({ toast }));
 
 const sender = { id: "00000000-0000-4000-8000-000000000011", name: "Milo" };

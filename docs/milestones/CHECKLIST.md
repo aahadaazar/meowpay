@@ -1,7 +1,9 @@
 # MeowPay — Milestone Checklist
 
-**8 of 11 complete.** M0–M7 done; M8–M10 not started.
-**Backend suite green — 17 tests, 0 failures** (2026-07-16). Frontend tests deferred.
+**8 of 11 complete.** M0–M7 done; M8–M9 deliberately deferred to clear testing debt; M10 not
+started.
+**Backend suite green — 17 tests, 0 failures. Frontend suite green — 24 tests, 0 failures**
+(2026-07-16). Live-app visual/UI walkthroughs still need a browser and are not run.
 
 | | Milestone | Type | Status |
 |---|---|---|---|
@@ -32,8 +34,16 @@ verification debt across M0–M6 is now cleared on the backend side.
 | `SecurityConfigTests` | M0 | 1 | ✅ |
 | `MeowPayApplicationTests` | M0 | 1 | ✅ |
 
-M4 added no new backend test suite (its authored tests are frontend-only: realtime hooks, trail
-sort, 768px collapse). Its only backend surface is migration `0007_realtime_publication.sql`,
+**The frontend suite is now also green — 12 files, 24 tests, 0 failures, 0 skipped** (2026-07-16),
+once Node.js became available in the environment (it wasn't during M0–M7 authoring). All 12
+`vitest` files run and pass — nothing was deleted or skipped to get there. See "Resolved —
+frontend test suite fixed" below for the five root causes and their fixes. The **palette
+validator** (`npm run validate:palette`, ADR 0004) also now runs and passes every check (light
++ dark, categorical/ordinal/diverging) — it could not run earlier for the same reason.
+
+M4 added no new backend test suite. Its authored tests are frontend-only — realtime hooks, trail
+sort, 768px collapse (`use-realtime.test.tsx`, `ledger-trail.test.tsx`, `realtime-dashboard.test.tsx`)
+— and now run and pass. Its only backend surface is migration `0007_realtime_publication.sql`,
 exercised implicitly by the two integration suites above, which replay every file in
 `supabase/migrations` against the ephemeral Testcontainers Postgres — see bug 5 below.
 
@@ -41,20 +51,19 @@ exercised implicitly by the two integration suites above, which replay every fil
 derive client-side from the same realtime ledger window M4 already holds, no aggregate endpoint).
 Its tests (`derive.test.ts`: daily buckets, recipient totals + "Other" fold, grants/top-ups
 bucketing, internal own-cat transfers netting to zero, empty/sparse/dense inputs) are frontend-only
-and authored but deferred. The full backend suite was re-run as a regression check and is
-unchanged at 17 tests, 0 failures.
+and now run and pass. The full backend suite was re-run as a regression check and is unchanged at
+17 tests, 0 failures.
 
 **M5 — the sender-ownership authorization check** (the key new authz surface introduced by a
 client-supplied `senderCatId`) is proven by `TransferControllerTests`. Its frontend tests
-(validation, confirm→submit fires once, `failure_reason` surfaced verbatim) were authored but
-are deferred, matching the standing frontend-test deferral for M0–M4.
+(`manual-transfer-form.test.tsx`: validation, confirm→submit fires once, `failure_reason` surfaced
+verbatim) now run and pass.
 
 **M6 — top-up's server-side policy checks** (preset allowlist, server cap, ownership of the
 target cat, and conservation across the treasury-backed mint) are proven by a single test added
 to `LedgerCoreIntegrationTests`: *"top up accepts presets preserves conservation and enforces
 ownership plus server policy"* — passes. Its frontend tests (`topup-presets.test.tsx`: pills
-render/submit, row wraps above the 44px touch target) were authored but deferred, matching the
-standing frontend-test deferral.
+render/submit, row wraps above the 44px touch target) now run and pass.
 
 **M2 — the centerpiece — is now proven.** Its doc says it is *"proven entirely by its test suite"*,
 and that suite now passes against a real Postgres with the real migrations applied. Both invariants
@@ -101,18 +110,40 @@ Everything below had been authored but never compiled or executed, so none of it
    before migrations run. **Test-fidelity gap, not a production bug.**
 
 ### Still outstanding
-- [ ] **Frontend tests — 6 files failing, deferred by decision.** Failures look like *harness config*,
-      not product defects: the `@/` path alias isn't configured in vitest (3 files — the imported
-      source files all exist), `window.matchMedia` isn't mocked (theme-toggle), `NextRequest` header
-      mocking (middleware), plus 3 design-token assertions. Not yet triaged.
 - [ ] **M0 verify (frontend half)** — the backend boots and rejects unauthenticated `/api/**`
-      (proven by `SecurityConfigTests`); the frontend has not been booted.
+      (proven by `SecurityConfigTests`); the frontend has not been booted. Needs a browser; no
+      browser-automation tool is available in this environment.
 - [ ] **M3 verify (UI half)** — the *backend* path is proven by `AuthAndCatManagementIntegrationTests`
       (human creates cats, each funded with 500, RLS isolates humans). The dashboard walkthrough needs
-      a running app + live Supabase.
+      a running app + live Supabase + a browser — same blocker as above.
+- [ ] **M1/M7 visual pass at 375/768/1440px in both themes** — same blocker; the palette and design
+      tokens are now proven correct by the (passing) unit and validator suites, but the responsive
+      layout itself has not been eyeballed in a real viewport.
 - [ ] **Confirm Supabase JWT signing mode** (HS256 vs JWKS) in project Auth settings — carried from
       M3. The decoder handles either; the live mode is still unconfirmed.
 - [ ] **Docker Compose** not yet run.
+
+### Resolved — frontend test suite fixed, all 24 tests now run and pass (2026-07-16)
+Node.js became available in the environment this session (it wasn't during M0–M7 authoring), which
+unblocked actually running `vitest` for the first time. All 6 previously-failing files turned out
+to be harness bugs, not product defects — fixed rather than skipped:
+1. **`@/` path alias unresolved in vitest** (6 files: `root-layout`, `use-realtime`,
+   `cat-management-dashboard`, `ledger-trail`, `login-form`, `realtime-dashboard`) — `vitest.config.ts`
+   had no `resolve.alias` even though `tsconfig.json` declares `@/* -> ./*`. Added the matching alias.
+2. **Design-token assertions read empty strings** (`design-tokens.test.ts`, 3 assertions) — vitest's
+   default `test.css: false` stubs CSS imports instead of injecting them into jsdom, so
+   `getComputedStyle` had nothing to read. Set `css: true`.
+3. **`window.matchMedia is not a function`** (`theme-toggle.test.tsx`) — jsdom doesn't implement it
+   and `next-themes` calls it on mount. Added a mock in `test/setup.ts`.
+4. **`Cannot access 'toast' before initialization`** (`topup-presets.test.tsx`,
+   `manual-transfer-form.test.tsx`) — both did `const toast = {...}; vi.mock("sonner", () => ({ toast
+   }))`, but `vi.mock` factories are hoisted above local `const`s, creating a temporal-dead-zone
+   reference. Switched to `vi.hoisted()`, the pattern `middleware.test.ts` already used correctly.
+5. **`request.headers must be an instance of Headers`** (`middleware.test.ts`) — `next/server`'s
+   `NextRequest`/`NextResponse` expect Node's real `Headers`/`Request`, not jsdom's polyfilled globals.
+   Added a `// @vitest-environment node` override for this one file.
+   Fixing 3 broke `matchMedia`'s `window` reference for this now-node-environment file — guarded the
+   `test/setup.ts` mock with `typeof window !== "undefined"`.
 
 ### Resolved — migrations applied to the live Supabase project (2026-07-16)
 - [x] **`.env` credentials** — Supabase URL, anon key, `SUPABASE_DB_URL` (Session Pooler),
@@ -158,6 +189,12 @@ Critical path: **M4 → M5 → M8 → M10.** M6, M7, M9 can slot in anywhere aft
 done — see [M04-realtime-dashboard.md](M04-realtime-dashboard.md) and
 [M05-manual-transfer.md](M05-manual-transfer.md).
 
+**M8 and M9 are deliberately deferred (decided 2026-07-16)** to clear the accumulated testing
+debt first: the deferred frontend suite (M0–M7), the palette validator, and the outstanding
+verify walkthroughs below. Neither M8 nor M9 is on a path that requires this work to finish
+first — M8 depends only on M4/M5 (already done) and M9 is largely independent — so the deferral
+is schedule, not dependency, driven. Resume with M8 once the testing backlog is cleared.
+
 ---
 
 ### ✅ M5 — Manual transfer `fullstack` · exercises ADR 0008/0009/0012
@@ -168,7 +205,7 @@ done — see [M04-realtime-dashboard.md](M04-realtime-dashboard.md) and
 - [x] Test: **rejects a sender cat the caller doesn't own** ← the key new authz check — backend
       run, passes (`TransferControllerTests`)
 - [x] Tests: validation; confirm→submit fires exactly once; failure surfaces `failure_reason` —
-      authored, frontend run deferred
+      frontend run, passes
 - [ ] Verify: send between your own two cats — total hero **stays constant**, both cards move,
       trail shows both legs — not run (no live app walkthrough this session)
 
@@ -179,8 +216,8 @@ done — see [M04-realtime-dashboard.md](M04-realtime-dashboard.md) and
 - [x] Tests: presets succeed; off-allowlist/over-cap rejected; **topping up a cat that isn't yours
       rejected**; **conservation preserved**; treasury goes negative by exactly the minted amount —
       backend run, passes (`LedgerCoreIntegrationTests`)
-- [ ] Test: pill row **wraps** rather than shrinking below the 44px touch target — authored,
-      frontend run deferred
+- [x] Test: pill row **wraps** rather than shrinking below the 44px touch target — frontend run,
+      passes
 - [ ] Verify: top up an empty wallet — balance and total update live — not run (no live app
       walkthrough this session)
 
@@ -189,11 +226,11 @@ done — see [M04-realtime-dashboard.md](M04-realtime-dashboard.md) and
 - [x] `top-recipients-chart` — horizontal bar, sequential teal, tail >7 folds into "Other"
 - [x] Tooltips, legend, validated palette both modes, 2-up → 1-up reflow <768px
 - [x] `derive.ts` — pure, no I/O
-- [ ] Tests: daily buckets; recipient totals + "Other" fold; grants/top-ups bucket correctly;
+- [x] Tests: daily buckets; recipient totals + "Other" fold; grants/top-ups bucket correctly;
       **internal own-cat transfers net to zero in aggregate**; empty/sparse/dense inputs —
-      authored, frontend run deferred. No backend test surface (ADR 0015: client-side only,
-      no aggregate endpoint) — full backend suite re-run as a regression check, unchanged at
-      17 tests, 0 failures.
+      frontend run, passes. No backend test surface (ADR 0015: client-side only, no aggregate
+      endpoint) — full backend suite re-run as a regression check, unchanged at 17 tests, 0
+      failures.
 - [ ] Verify: visual pass at 375/768/1440 in both themes — not run (no frontend runtime /
       live app walkthrough this session)
 

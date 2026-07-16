@@ -38,3 +38,8 @@ validator checks color, not layout.
 
 - 2026-07-15 — started. M1 picked up after M0 handoff; reading linked ADRs, DESIGN.md, and APP-EXTENSIONS.md before tokenization work.
 - 2026-07-15 — done. Commits 85e4595, 3994917, ce5a145, plus the final done-marker commit. Palette validator passed via Windows Node v20.19.3; visual verify inspected Chrome captures at 375 / 768 / 1440px in light and dark. Frontend tests authored, not run.
+- 2026-07-16 — frontend suite run (Node.js became available again this session, having dropped out
+  between M1 and M2). `design-tokens.test.ts`'s three token assertions pass — they needed `vitest.config.ts`'s
+  `test.css` enabled so jsdom actually receives the compiled CSS; see [CHECKLIST.md](CHECKLIST.md).
+  The palette validator (`npm run validate:palette`) was re-run and still passes every check in
+  both themes across categorical, ordinal, and diverging palettes.
