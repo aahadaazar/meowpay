@@ -1,6 +1,6 @@
 # MeowPay — Milestone Checklist
 
-**7 of 11 complete.** M0–M6 done; M7–M10 not started.
+**8 of 11 complete.** M0–M7 done; M8–M10 not started.
 **Backend suite green — 17 tests, 0 failures** (2026-07-16). Frontend tests deferred.
 
 | | Milestone | Type | Status |
@@ -12,7 +12,7 @@
 | M4 | [Realtime dashboard](M04-realtime-dashboard.md) | fullstack | ✅ done |
 | M5 | [Manual transfer](M05-manual-transfer.md) | fullstack | ✅ done |
 | M6 | [Top-up](M06-topup.md) | fullstack | ✅ done |
-| M7 | [Activity charts](M07-activity-charts.md) | fullstack | ⬜ not started |
+| M7 | [Activity charts](M07-activity-charts.md) | fullstack | ✅ done |
 | M8 | [Agentic NL composer](M08-agentic-nl-composer.md) | fullstack | ⬜ not started |
 | M9 | [Agentic activity insight](M09-agentic-activity-insight.md) | fullstack | ⬜ not started |
 | M10 | [Dockerization & README](M10-dockerization-and-readme.md) | packaging | ⬜ not started |
@@ -36,6 +36,13 @@ M4 added no new backend test suite (its authored tests are frontend-only: realti
 sort, 768px collapse). Its only backend surface is migration `0007_realtime_publication.sql`,
 exercised implicitly by the two integration suites above, which replay every file in
 `supabase/migrations` against the ephemeral Testcontainers Postgres — see bug 5 below.
+
+**M7 likewise added no backend test suite and no backend endpoint** — by design (ADR 0015: charts
+derive client-side from the same realtime ledger window M4 already holds, no aggregate endpoint).
+Its tests (`derive.test.ts`: daily buckets, recipient totals + "Other" fold, grants/top-ups
+bucketing, internal own-cat transfers netting to zero, empty/sparse/dense inputs) are frontend-only
+and authored but deferred. The full backend suite was re-run as a regression check and is
+unchanged at 17 tests, 0 failures.
 
 **M5 — the sender-ownership authorization check** (the key new authz surface introduced by a
 client-supplied `senderCatId`) is proven by `TransferControllerTests`. Its frontend tests
@@ -177,14 +184,18 @@ done — see [M04-realtime-dashboard.md](M04-realtime-dashboard.md) and
 - [ ] Verify: top up an empty wallet — balance and total update live — not run (no live app
       walkthrough this session)
 
-### ⬜ M7 — Activity charts `fullstack` · ADR 0015
-- [ ] `treat-flow-chart` — diverging column, zero-centered, credits above / debits below
-- [ ] `top-recipients-chart` — horizontal bar, sequential teal, tail >7 folds into "Other"
-- [ ] Tooltips, legend, validated palette both modes, 2-up → 1-up reflow <768px
-- [ ] `derive.ts` — pure, no I/O
+### ✅ M7 — Activity charts `fullstack` · ADR 0015
+- [x] `treat-flow-chart` — diverging column, zero-centered, credits above / debits below
+- [x] `top-recipients-chart` — horizontal bar, sequential teal, tail >7 folds into "Other"
+- [x] Tooltips, legend, validated palette both modes, 2-up → 1-up reflow <768px
+- [x] `derive.ts` — pure, no I/O
 - [ ] Tests: daily buckets; recipient totals + "Other" fold; grants/top-ups bucket correctly;
-      **internal own-cat transfers net to zero in aggregate**; empty/sparse/dense inputs
-- [ ] Verify: visual pass at 375/768/1440 in both themes
+      **internal own-cat transfers net to zero in aggregate**; empty/sparse/dense inputs —
+      authored, frontend run deferred. No backend test surface (ADR 0015: client-side only,
+      no aggregate endpoint) — full backend suite re-run as a regression check, unchanged at
+      17 tests, 0 failures.
+- [ ] Verify: visual pass at 375/768/1440 in both themes — not run (no frontend runtime /
+      live app walkthrough this session)
 
 ### ⬜ M8 — Agentic NL composer `fullstack` · ADR 0016/0017
 - [ ] `GroqClient` — OpenAI-compatible HTTP via `RestClient`, no SDK

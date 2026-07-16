@@ -35,3 +35,9 @@ themes — the same layout check M1 establishes.
   realtime chart cards. Commits aff534a..ca89079. The required palette validator was attempted,
   but Node.js is unavailable; frontend tests remain unrun per instruction and the 375 / 768 /
   1440px visual pass cannot run without a frontend runtime. No backend endpoint was added.
+- 2026-07-16 — tests run (backend side). M7 is client-side only (ADR 0015) and adds no backend
+  endpoint or backend test suite — `derive.ts`'s tests are frontend-only. Ran the full backend
+  suite as a regression check instead: still 17 tests, 0 failures, unchanged from before this
+  milestone, confirming M7 introduced no backend regressions. `derive.test.ts` remains unrun,
+  matching the standing frontend-test deferral. The 375/768/1440px visual pass still needs a
+  live app walkthrough.
