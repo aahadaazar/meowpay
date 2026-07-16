@@ -1,6 +1,6 @@
 # M5 — Manual transfer
 
-**Type:** fullstack · **Status:** not started
+**Type:** fullstack · **Status:** in progress
 **ADRs:** none new — exercises [0008](../adr/0008-atomic-plpgsql-transfer.md),
 [0009](../adr/0009-idempotency-and-status.md), [0012](../adr/0012-rls-ownership-subquery.md)
 
@@ -30,4 +30,4 @@ shows both legs.
 
 ## Progress log
 
-- not started
+- 2026-07-16 — started. Reviewing transfer contracts and the existing realtime dashboard read model.
