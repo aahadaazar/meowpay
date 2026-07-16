@@ -1,6 +1,6 @@
 # M4 — Realtime dashboard: total, cats, trail
 
-**Type:** fullstack · **Status:** not started
+**Type:** fullstack · **Status:** in progress
 **ADR:** [0013](../adr/0013-realtime-scoping-via-rls.md)
 
 ## Scope
