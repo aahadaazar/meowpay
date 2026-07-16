@@ -1,6 +1,6 @@
 # M7 — Activity charts
 
-**Type:** fullstack · **Status:** not started
+**Type:** fullstack · **Status:** in progress
 **ADR:** [0015](../adr/0015-client-side-chart-derivation.md)
 
 ## Scope
@@ -30,4 +30,4 @@ themes — the same layout check M1 establishes.
 
 ## Progress log
 
-- not started
+- 2026-07-16 — started. Reading chart and design decisions; implementation pending.
