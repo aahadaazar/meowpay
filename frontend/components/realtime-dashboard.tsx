@@ -6,9 +6,11 @@ import { LedgerTrail } from "@/components/ledger-trail";
 import { NewCatDialog } from "@/components/new-cat-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { TotalHero } from "@/components/total-hero";
+import { ManualTransferForm } from "@/components/transfer-composer/manual-transfer-form";
+import type { CatOption } from "@/components/transfer-composer/types";
 import { useRealtimeLedger } from "@/hooks/use-realtime-ledger";
 import { useRealtimeWallets } from "@/hooks/use-realtime-wallets";
-import { createCat, type CatSummary } from "@/lib/api";
+import { createCat, executeTransfer, type CatSummary, type ExecuteTransferInput } from "@/lib/api";
 import { ledgerEntryFromRow, sortLedgerEntries, type DashboardCat, type LedgerEntry, type WalletRealtimeRow } from "@/lib/dashboard-types";
 import { createClient } from "@/lib/supabase/client";
 
@@ -16,6 +18,7 @@ type RealtimeDashboardProps = {
   displayName: string;
   initialCats: DashboardCat[];
   initialEntries: LedgerEntry[];
+  initialRecipientCats: CatOption[];
 };
 
 export function applyWalletChange(cats: DashboardCat[], wallet: WalletRealtimeRow): DashboardCat[] {
@@ -28,9 +31,10 @@ export function applyLedgerChange(entries: LedgerEntry[], payload: { eventType: 
   return sortLedgerEntries([...entries.filter((entry) => entry.id !== nextEntry.id), nextEntry]);
 }
 
-export function RealtimeDashboard({ displayName, initialCats, initialEntries }: RealtimeDashboardProps) {
+export function RealtimeDashboard({ displayName, initialCats, initialEntries, initialRecipientCats }: RealtimeDashboardProps) {
   const [cats, setCats] = useState(initialCats);
   const [entries, setEntries] = useState(() => sortLedgerEntries(initialEntries));
+  const [recipientCats, setRecipientCats] = useState(initialRecipientCats);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -48,12 +52,19 @@ export function RealtimeDashboard({ displayName, initialCats, initialEntries }: 
       if (!session) throw new Error("Your session has expired. Please sign in again.");
       const cat: CatSummary = await createCat(session.access_token, name);
       setCats((current) => [...current, cat]);
+      setRecipientCats((current) => current.some((candidate) => candidate.id === cat.id) ? current : [...current, { id: cat.id, name: cat.name }]);
       setIsDialogOpen(false);
     } catch (createError) {
       setError(createError instanceof Error ? createError.message : "MeowPay could not create that cat.");
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  async function submitTransfer(input: ExecuteTransferInput) {
+    const { data: { session } } = await createClient().auth.getSession();
+    if (!session) throw new Error("Your session has expired. Please sign in again.");
+    return executeTransfer(session.access_token, input);
   }
 
   return <main className="min-h-screen bg-background text-foreground">
@@ -63,6 +74,7 @@ export function RealtimeDashboard({ displayName, initialCats, initialEntries }: 
       {error ? <p className="text-body-sm text-destructive" role="alert">{error}</p> : null}
       <TotalHero cats={cats} entries={entries} />
       {cats.length === 0 ? <section className="product-mockup-card grid justify-items-center gap-4 py-12 text-center"><h2 className="text-display-sm">Create your first cat</h2><p className="max-w-md text-body-md text-body">Each cat gets a wallet and 500 welcome treats to begin with.</p><button className="button-primary" onClick={() => setIsDialogOpen(true)} type="button">Create your first cat</button></section> : <section aria-label="Cat wallets" className="grid gap-4 md:grid-cols-2">{cats.map((cat) => <CatCard cat={cat} key={cat.id} />)}</section>}
+      <ManualTransferForm ownedCats={cats} onSubmitTransfer={submitTransfer} recipientCats={recipientCats} />
       <LedgerTrail cats={cats} entries={entries} />
     </div>
     <NewCatDialog isOpen={isDialogOpen} isSubmitting={isSubmitting} onClose={() => setIsDialogOpen(false)} onCreate={create} />

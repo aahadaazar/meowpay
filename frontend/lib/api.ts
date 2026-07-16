@@ -17,6 +17,23 @@ type ApiError = {
   message: string;
 };
 
+export type ExecuteTransferInput = {
+  idempotencyKey: string;
+  senderCatId: string;
+  receiverCatId: string;
+  amount: number;
+  note: string | null;
+  source: "manual" | "agent";
+};
+
+export type TransferResponse = ExecuteTransferInput & {
+  id: string;
+  initiatedBy: string | null;
+  status: "completed" | "failed";
+  failureReason: string | null;
+  createdAt: string;
+};
+
 const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL ?? "http://localhost:8080";
 
 async function request<T>(path: string, accessToken: string, init?: RequestInit): Promise<T> {
@@ -46,4 +63,28 @@ export function createCat(accessToken: string, name: string): Promise<CatSummary
     method: "POST",
     body: JSON.stringify({ name }),
   });
+}
+
+export async function executeTransfer(accessToken: string, input: ExecuteTransferInput): Promise<TransferResponse> {
+  const response = await fetch(`${backendUrl}/api/transfers/execute`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(input),
+  });
+  const body = (await response.json().catch(() => null)) as TransferResponse | ApiError | null;
+
+  // Business failures are durable transfer outcomes. The API deliberately returns their row with
+  // 422, so the UI can expose `failureReason` rather than replacing it with a generic error.
+  if (response.status === 422 && body && "status" in body) {
+    return body;
+  }
+
+  if (!response.ok) {
+    throw new Error(body && "message" in body ? body.message : "MeowPay could not complete that request.");
+  }
+
+  return body as TransferResponse;
 }
