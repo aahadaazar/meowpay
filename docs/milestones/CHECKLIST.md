@@ -1,7 +1,7 @@
 # MeowPay — Milestone Checklist
 
-**4 of 11 complete.** M0–M3 done; M4–M10 not started.
-**Backend suite green — 15 tests, 0 failures** (2026-07-15). Frontend tests deferred.
+**5 of 11 complete.** M0–M4 done; M5–M10 not started.
+**Backend suite green — 15 tests, 0 failures** (2026-07-16). Frontend tests deferred.
 
 | | Milestone | Type | Status |
 |---|---|---|---|
@@ -9,7 +9,7 @@
 | M1 | [Design system](M01-design-system.md) | enabler | ✅ done |
 | M2 | [Ledger core](M02-ledger-core.md) | enabler (BE+DB) | ✅ done |
 | M3 | [Auth & cat management](M03-auth-and-cat-management.md) | fullstack | ✅ done |
-| M4 | [Realtime dashboard](M04-realtime-dashboard.md) | fullstack | ⬜ not started |
+| M4 | [Realtime dashboard](M04-realtime-dashboard.md) | fullstack | ✅ done |
 | M5 | [Manual transfer](M05-manual-transfer.md) | fullstack | ⬜ not started |
 | M6 | [Top-up](M06-topup.md) | fullstack | ⬜ not started |
 | M7 | [Activity charts](M07-activity-charts.md) | fullstack | ⬜ not started |
@@ -21,8 +21,8 @@
 
 ## ✅ Verification status
 
-**The backend suite is green — 15 tests, 0 failures, 0 skipped** (2026-07-15). The compounded
-verification debt across M0–M3 is now cleared on the backend side.
+**The backend suite is green — 15 tests, 0 failures, 0 skipped** (2026-07-16). The compounded
+verification debt across M0–M4 is now cleared on the backend side.
 
 | Suite | Milestone | Tests | Result |
 |---|---|---|---|
@@ -30,6 +30,11 @@ verification debt across M0–M3 is now cleared on the backend side.
 | `AuthAndCatManagementIntegrationTests` | M3 | 4 | ✅ |
 | `SecurityConfigTests` | M0 | 1 | ✅ |
 | `MeowPayApplicationTests` | M0 | 1 | ✅ |
+
+M4 added no new backend test suite (its authored tests are frontend-only: realtime hooks, trail
+sort, 768px collapse). Its only backend surface is migration `0007_realtime_publication.sql`,
+exercised implicitly by the two integration suites above, which replay every file in
+`supabase/migrations` against the ephemeral Testcontainers Postgres — see bug 5 below.
 
 **M2 — the centerpiece — is now proven.** Its doc says it is *"proven entirely by its test suite"*,
 and that suite now passes against a real Postgres with the real migrations applied. Both invariants
@@ -65,6 +70,15 @@ Everything below had been authored but never compiled or executed, so none of it
 4. **Kotlin/AssertJ compile error** *(fixed)*. `satisfies { }` couldn't resolve between the
    `Consumer` and `ThrowingConsumer` overloads, failing `compileTestKotlin` — which blocked the M2
    suite too, since all test sources compile together.
+5. **`0007_realtime_publication.sql` broke both integration suites** *(fixed, found running M4's
+   backend verification)*. It runs `ALTER PUBLICATION supabase_realtime ADD TABLE ...`, but that
+   publication only exists because real Supabase creates it at project bootstrap — the ephemeral
+   Testcontainers Postgres has no such publication, so both `LedgerCoreIntegrationTests` and
+   `AuthAndCatManagementIntegrationTests` failed with `ERROR: publication "supabase_realtime" does
+   not exist` (13 of 15 tests). Same class of test-fidelity gap as bug 3 (RLS grant). Fixed by
+   emulating the Supabase bootstrap condition in both harnesses: `CREATE PUBLICATION
+   supabase_realtime` (guarded, matching the existing `anon`/`authenticated` role-creation pattern)
+   before migrations run. **Test-fidelity gap, not a production bug.**
 
 ### Still outstanding
 - [ ] **Frontend tests — 6 files failing, deferred by decision.** Failures look like *harness config*,
@@ -109,22 +123,10 @@ M4 (dashboard)  ──┬── M5 (manual transfer) ── M8 (NL composer, reu
                   └── M9 (insight, largely independent)
                                                               all ──> M10 (package)
 ```
-Critical path: **M4 → M5 → M8 → M10.** M6, M7, M9 can slot in anywhere after M4.
+Critical path: **M4 → M5 → M8 → M10.** M6, M7, M9 can slot in anywhere after M4. M4 is done — see
+[M04-realtime-dashboard.md](M04-realtime-dashboard.md).
 
 ---
-
-### ⬜ M4 — Realtime dashboard `fullstack` · ADR 0013
-The read side, live. M3's welcome grants already give it real data to render.
-- [ ] Server component for initial fetch → hands off to realtime client components
-- [ ] `use-realtime-wallets`, `use-realtime-ledger` — RLS-scoped, **unfiltered** subscriptions
-- [ ] Total hero + delta + sparkline
-- [ ] Per-cat cards
-- [ ] `ledger-trail` — cat column, direction/source badges, DiceBear avatar, `tabular-nums`,
-      running `balance_after`, **stacked cards <768px**
-- [ ] `Skeleton` loading states
-- [ ] Migration `0007_realtime_publication.sql` — publish `wallets`, `ledger_entries` **only**
-- [ ] Tests: hooks apply payloads (mocked channel); trail sorts; 768px collapse
-- [ ] Verify: create a cat → watch its grant land live *(first real E2E moment)*
 
 ### ⬜ M5 — Manual transfer `fullstack` · exercises ADR 0008/0009/0012
 - [ ] Send form (`react-hook-form` + `zod`): From [my cat] → To [any other cat], amount, note

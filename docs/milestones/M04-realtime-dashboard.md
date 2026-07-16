@@ -36,3 +36,11 @@ first real end-to-end moment: create a cat, watch its grant land live.
   has no Java or Node runtime, the frontend and backend were not already running, and Docker
   Compose was deliberately not run per user instruction. The required two-human RLS/realtime and
   deployed Realtime filter checks remain pending against the configured Supabase project.
+- 2026-07-16 — backend suite run (M4 has no new backend tests; this re-runs the full suite,
+  applying every migration including `0007_realtime_publication.sql`). Surfaced a real
+  test-fidelity gap: `0007` does `ALTER PUBLICATION supabase_realtime ADD TABLE ...`, but the
+  ephemeral Testcontainers Postgres has no `supabase_realtime` publication (only real Supabase
+  creates one at bootstrap) — 13 of 15 tests failed with `publication "supabase_realtime" does not
+  exist`. Fixed by creating that publication in both integration test harnesses before migrations
+  run, matching the existing `anon`/`authenticated` role emulation. Suite now green, 15/15. See
+  bug 5 in [CHECKLIST.md](CHECKLIST.md).

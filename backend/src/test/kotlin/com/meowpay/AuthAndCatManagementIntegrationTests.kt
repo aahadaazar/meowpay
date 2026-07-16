@@ -66,6 +66,17 @@ class AuthAndCatManagementIntegrationTests {
                     """.trimIndent(),
                 )
                 statement.execute("GRANT USAGE ON SCHEMA auth TO authenticated")
+                statement.execute(
+                    """
+                    DO $$
+                    BEGIN
+                        IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
+                            CREATE PUBLICATION supabase_realtime;
+                        END IF;
+                    END;
+                    $$
+                    """.trimIndent(),
+                )
                 statement.execute("DROP SCHEMA IF EXISTS public CASCADE")
                 statement.execute("CREATE SCHEMA public")
                 // Recreating public drops the USAGE grant a real public schema carries; Supabase
