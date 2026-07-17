@@ -2,8 +2,13 @@ package com.meowpay
 
 import com.meowpay.dto.ExecuteTransferRequest
 import com.meowpay.dto.TopupRequest
+import com.meowpay.agent.InsightModelClient
+import com.meowpay.agent.InsightWindow
+import com.meowpay.agent.InsightAgent
 import com.meowpay.exception.BadRequestException
 import com.meowpay.exception.ForbiddenException
+import com.meowpay.service.InsightService
+import com.meowpay.service.RecentTransaction
 import com.meowpay.service.OwnershipGuard
 import com.meowpay.service.TransferService
 import org.assertj.core.api.Assertions.assertThat
@@ -171,6 +176,32 @@ class LedgerCoreIntegrationTests {
         assertThat(balance(cat.walletId)).isZero()
         assertThat(jdbcClient.sql("SELECT count(*) FROM public.ledger_entries WHERE wallet_id = :walletId").param("walletId", cat.walletId).query(Int::class.java).single()).isZero()
         assertWalletReconciliation()
+    }
+
+    @Test
+    fun `insight rows ignore a model injected foreign cat id and summarize caller activity`() {
+        val alice = createHuman("Alice")
+        val bob = createHuman("Bob")
+        val milo = createCat(alice.id, "Milo")
+        val nori = createCat(bob.id, "Nori")
+        executeRaw(treasuryWalletId, alice.walletId, 100, "topup", alice.id)
+        executeRaw(alice.walletId, milo.walletId, 100, "manual", alice.id)
+        executeRaw(milo.walletId, nori.walletId, 25, "manual", alice.id)
+
+        val model = object : InsightModelClient {
+            override fun chooseWindow() = InsightWindow(days = 30, limit = 10)
+            override fun summarize(transactions: List<RecentTransaction>) = "${transactions.size} recent cat transactions."
+        }
+        val insightService = InsightService(jdbcClient)
+        val insightAgent = InsightAgent(insightService, model)
+        val baseline = insightService.recentTransactions(alice.id, InsightWindow(days = 30, limit = 10))
+        // cat_id is present in this malicious model payload but is deliberately discarded.
+        val afterInjection = insightService.recentTransactionsForTool(alice.id, mapOf("cat_id" to nori.id.toString(), "days" to 30, "limit" to 10))
+
+        assertThat(afterInjection).isEqualTo(baseline)
+        assertThat(afterInjection).isNotEmpty
+        assertThat(afterInjection).allMatch { it.catName == "Milo" }
+        assertThat(insightAgent.summary(alice.id)).isNotBlank()
     }
 
     private fun createHuman(displayName: String): HumanWallet {

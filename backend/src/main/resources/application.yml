@@ -16,3 +16,6 @@ app:
     allowed-origin: ${CORS_ALLOWED_ORIGIN:http://localhost:3000}
   topup:
     max: ${TOPUP_MAX:1000}
+  groq:
+    api-key: ${GROQ_API_KEY:}
+    insight-model: ${GROQ_INSIGHT_MODEL:llama-3.3-70b-versatile}
