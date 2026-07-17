@@ -26,13 +26,14 @@ plus git history is the source of truth for progress.
 | [M5](milestones/M05-manual-transfer.md) | Manual transfer | fullstack | done | — (exercises 0008/0009/0012) |
 | [M6](milestones/M06-topup.md) | Top-up | fullstack | done | [0014](adr/0014-topup-as-treasury-transfer.md) |
 | [M7](milestones/M07-activity-charts.md) | Activity charts | fullstack | done | [0015](adr/0015-client-side-chart-derivation.md) |
-| [M8](milestones/M08-agentic-nl-composer.md) | Agentic NL composer | fullstack | not started | [0016](adr/0016-agent-proposes-human-confirms.md) · [0017](adr/0017-groq-model-split.md) |
-| [M9](milestones/M09-agentic-activity-insight.md) | Agentic activity insight | fullstack | not started | [0018](adr/0018-tool-use-data-scoping.md) |
+| [M8](milestones/M08-agentic-nl-composer.md) | Agentic NL composer | fullstack | abandoned | [0016](adr/0016-agent-proposes-human-confirms.md) · [0017](adr/0017-groq-model-split.md) |
+| [M9](milestones/M09-agentic-activity-insight.md) | Agentic activity insight | fullstack | done | [0018](adr/0018-tool-use-data-scoping.md) |
 | [M10](milestones/M10-dockerization-and-readme.md) | Dockerization & README | packaging | not started | [0019](adr/0019-deployment-topology.md) |
 | [M11](milestones/M11-e2e-local-supabase.md) | e2e suite against local Supabase | tooling | abandoned | [0020](adr/0020-e2e-against-local-supabase.md) (Rejected) |
 | [M12](milestones/M12-treasury-entity-and-human-wallets.md) | Treasury as an entity; humans hold wallets | fullstack | done | [0021](adr/0021-wallet-is-the-account.md) · [0022](adr/0022-humans-hold-wallets.md) · [0023](adr/0023-funding-path-topup-mints-to-the-human.md) |
 
-M0–M10 were the original 11-milestone plan and are all documented (M8–M10 not yet implemented).
+M0–M10 were the original 11-milestone plan and are all documented (M8 abandoned; M9–M10 not yet
+implemented).
 **M11 was added later** (2026-07-16), after a Playwright e2e suite (`e2e/`) was built and run
 against the live hosted Supabase project — repeated local iteration against that project's admin
 API hit Supabase's rate limits. M11 addressed this by retargeting local e2e runs at a local
@@ -50,16 +51,14 @@ the composer carries `From [my wallet or cat] → To [any cat]`, never a global 
 ## Backend endpoints (all `/api`, all JWT-protected; no auth endpoints)
 
 `GET /me` (includes the human `walletId` + balance) · `GET /cats` (includes each cat `walletId`) ·
-`POST /cats` · `POST /transfers/execute { senderWalletId, receiverWalletId, ... }` (manual and
-agent-confirm both call this one endpoint) · `POST /wallet/topup { idempotencyKey, amount }` ·
-`POST /composer/parse` (proposal only) · `GET /insights/summary`.
+`POST /cats` · `POST /transfers/execute { senderWalletId, receiverWalletId, ... }` ·
+`POST /wallet/topup { idempotencyKey, amount }` · `GET /insights/summary`.
 
 ## Overall verification (once implemented)
 
 - **Backend:** Testcontainers — concurrency, insufficient balance, idempotency replay,
   per-wallet reconciliation, global conservation, cat-ownership authz on every money endpoint.
 - **End to end:** one human, two cats; top up an empty wallet; send between your own cats (total
-  unchanged) and to another human's cat; via both manual form and NL composer; realtime lands
-  without refresh; re-send a used idempotency key → no double-charge; light/dark and
-  mobile/desktop all render.
+  unchanged) and to another human's cat; realtime lands without refresh; re-send a used
+  idempotency key → no double-charge; light/dark and mobile/desktop all render.
 - **Docker:** `docker compose up --build` from a clean clone works end to end.

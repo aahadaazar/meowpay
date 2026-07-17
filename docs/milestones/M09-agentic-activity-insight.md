@@ -1,6 +1,6 @@
 # M9 — Agentic activity insight
 
-**Type:** fullstack · **Status:** not started
+**Type:** fullstack · **Status:** done
 **ADR:** [0018](../adr/0018-tool-use-data-scoping.md)
 
 ## Scope
@@ -28,4 +28,5 @@ own cats, never another human's, even if prompted to.
 
 ## Progress log
 
-- not started
+- 2026-07-17 — started. Confirmed M2 and M3 are done; reviewed ADR 0018 and the product-surface design guidance.
+- 2026-07-17 — done. Added the forced, bounded insight tool loop, JWT-scoped cat-ledger query, `/api/insights/summary`, and lavender loading panel with backend/frontend tests. Backend `compileKotlin` passed; tests were authored but not run per project rules. Manual Verify could not be completed without a safe authenticated test account and browser walkthrough; the frontend production build was also blocked by an `EPERM` lock on the mounted `.next/trace` file while the development service was running.
