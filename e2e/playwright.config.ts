@@ -17,6 +17,6 @@ export default defineConfig({
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
-  // Assumes the app stack is already running. For local iteration use
-  // `docker compose --env-file e2e/.env.e2e up --build`; Playwright does not boot the stack.
+  // Assumes `docker compose up --build` (or `npm run dev` + `./gradlew bootRun`) is already
+  // running against the live Supabase project in .env — this suite does not boot the stack.
 });

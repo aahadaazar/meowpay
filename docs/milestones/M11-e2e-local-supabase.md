@@ -1,6 +1,6 @@
 # M11 — e2e suite against local Supabase
 
-**Type:** tooling · **Status:** done
+**Type:** tooling · **Status:** in progress
 **ADR:** [0020](../adr/0020-e2e-against-local-supabase.md)
 
 ## Why this milestone exists
@@ -59,7 +59,3 @@ retargeted; there's nothing further to write tests for.
 ## Progress log
 
 - 2026-07-16 — started. Retargeting e2e infrastructure to an isolated local Supabase instance.
-- 2026-07-16 — done. Added the local Supabase CLI configuration, committed local e2e env,
-  compose env-file switch, and local-first runbook. Compose resolution was verified for the local
-  and default paths. The live verify step was not runnable: this environment has Docker but no
-  Supabase CLI (or host Node runtime), so it cannot start or reset local Supabase or run Playwright.
