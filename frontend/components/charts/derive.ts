@@ -11,7 +11,7 @@ export type FlowBucket = {
 };
 
 export type TopRecipient = {
-  catId: string;
+  walletId: string;
   name: string;
   amount: number;
   colorStep: 1 | 2 | 3 | 4;
@@ -86,17 +86,17 @@ export function deriveActivityCharts(entries: LedgerEntry[], now: Date): Activit
   const recipientsByCat = new Map<string, { name: string; amount: number }>();
   for (const entry of visibleEntries) {
     if (entry.direction !== "debit") continue;
-    const current = recipientsByCat.get(entry.counterpartyCatId) ?? { name: entry.counterpartyName, amount: 0 };
+    const current = recipientsByCat.get(entry.counterpartyWalletId) ?? { name: entry.counterpartyName, amount: 0 };
     current.amount += entry.amount;
-    recipientsByCat.set(entry.counterpartyCatId, current);
+    recipientsByCat.set(entry.counterpartyWalletId, current);
   }
 
   const rankedRecipients = [...recipientsByCat.entries()]
-    .map(([catId, recipient]) => ({ catId, ...recipient }))
-    .sort((left, right) => right.amount - left.amount || left.name.localeCompare(right.name) || left.catId.localeCompare(right.catId));
+    .map(([walletId, recipient]) => ({ walletId, ...recipient }))
+    .sort((left, right) => right.amount - left.amount || left.name.localeCompare(right.name) || left.walletId.localeCompare(right.walletId));
   const head = rankedRecipients.slice(0, MAX_RECIPIENTS);
   const tail = rankedRecipients.slice(MAX_RECIPIENTS);
-  if (tail.length > 0) head.push({ catId: "other", name: "Other", amount: tail.reduce((total, recipient) => total + recipient.amount, 0) });
+  if (tail.length > 0) head.push({ walletId: "other", name: "Other", amount: tail.reduce((total, recipient) => total + recipient.amount, 0) });
 
   const amounts = head.map((recipient) => recipient.amount);
   const smallest = Math.min(...amounts);

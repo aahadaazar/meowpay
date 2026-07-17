@@ -5,16 +5,16 @@ const now = new Date("2026-07-16T23:59:59.000Z");
 
 function entry(overrides: Partial<LedgerEntry>): LedgerEntry {
   return {
-    id: "entry-1", transferId: "transfer-1", walletCatId: "cat-milo", direction: "credit", amount: 10,
-    balanceAfter: 10, counterpartyCatId: "treasury", counterpartyName: "MeowPay Treasury", note: null,
-    source: "welcome_grant", initiatedBy: null, createdAt: "2026-07-14T10:00:00.000Z", ...overrides,
+    id: "entry-1", transferId: "transfer-1", walletId: "wallet-milo", direction: "credit", amount: 10,
+    balanceAfter: 10, counterpartyWalletId: "treasury", counterpartyName: "MeowPay Treasury", note: null,
+    source: "topup", initiatedBy: "human-1", createdAt: "2026-07-14T10:00:00.000Z", ...overrides,
   };
 }
 
 describe("deriveActivityCharts", () => {
-  it("builds contiguous daily buckets and puts grants and top-ups in credits", () => {
+  it("treats a top-up credit as external", () => {
     const result = deriveActivityCharts([
-      entry({ id: "grant", amount: 500, source: "welcome_grant", createdAt: "2026-07-14T10:00:00.000Z" }),
+      entry({ id: "topup-one", amount: 500, source: "topup", createdAt: "2026-07-14T10:00:00.000Z" }),
       entry({ id: "topup", transferId: "topup", amount: 100, source: "topup", createdAt: "2026-07-16T10:00:00.000Z" }),
     ], now);
 
@@ -31,27 +31,27 @@ describe("deriveActivityCharts", () => {
       transferId: `transfer-${index}`,
       direction: "debit",
       amount: 90 - index * 10,
-      counterpartyCatId: `cat-${index}`,
+      counterpartyWalletId: `wallet-${index}`,
       counterpartyName: `Cat ${index}`,
       source: "manual",
     }));
-    entries.push(entry({ id: "another-to-cat-0", transferId: "another", direction: "debit", amount: 10, counterpartyCatId: "cat-0", counterpartyName: "Cat 0", source: "manual" }));
+    entries.push(entry({ id: "another-to-cat-0", transferId: "another", direction: "debit", amount: 10, counterpartyWalletId: "wallet-0", counterpartyName: "Cat 0", source: "manual" }));
 
     const result = deriveActivityCharts(entries, now);
 
     expect(result.recipients).toHaveLength(8);
-    expect(result.recipients[0]).toMatchObject({ catId: "cat-0", amount: 100 });
-    expect(result.recipients.at(-1)).toMatchObject({ catId: "other", name: "Other", amount: 30 });
+    expect(result.recipients[0]).toMatchObject({ walletId: "wallet-0", amount: 100 });
+    expect(result.recipients.at(-1)).toMatchObject({ walletId: "other", name: "Other", amount: 30 });
   });
 
-  it("nets ledger pairs for transfers between the human's own cats to zero in aggregate flow", () => {
+  it("treats a human to cat transfer as internal when both ledger sides are visible", () => {
     const result = deriveActivityCharts([
-      entry({ id: "outgoing", transferId: "between-own-cats", direction: "debit", amount: 100, counterpartyCatId: "cat-luna", counterpartyName: "Luna", source: "manual" }),
-      entry({ id: "incoming", transferId: "between-own-cats", walletCatId: "cat-luna", direction: "credit", amount: 100, counterpartyCatId: "cat-milo", counterpartyName: "Milo", source: "manual" }),
+      entry({ id: "outgoing", transferId: "human-to-cat", walletId: "human-wallet", direction: "debit", amount: 100, counterpartyWalletId: "wallet-luna", counterpartyName: "Luna", source: "manual" }),
+      entry({ id: "incoming", transferId: "human-to-cat", walletId: "wallet-luna", direction: "credit", amount: 100, counterpartyWalletId: "human-wallet", counterpartyName: "You", source: "manual" }),
     ], now);
 
     expect(result.flow).toEqual([]);
-    expect(result.recipients).toMatchObject([{ catId: "cat-luna", amount: 100 }]);
+    expect(result.recipients).toMatchObject([{ walletId: "wallet-luna", amount: 100 }]);
   });
 
   it("returns sane empty and sparse data without reading a clock or doing I/O", () => {

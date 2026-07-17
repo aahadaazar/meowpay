@@ -28,7 +28,7 @@ test("sending treats populates the top recipients chart, and hovering shows its 
   const receiver = uniqueCatName("Chart-Receiver");
   await createCat(page, sender);
   await createCat(page, receiver);
-  await fillManualTransferForm(page, { senderCatName: sender, receiverCatName: receiver, amount: 60 });
+  await fillManualTransferForm(page, { senderName: sender, receiverCatName: receiver, amount: 60 });
   await confirmSend(page);
   await expect(toast(page, "Treats sent.")).toBeVisible();
 
@@ -49,7 +49,7 @@ test("an internal own-cat transfer nets to zero in the flow chart, but its recip
   const catB = uniqueCatName("Internal-B");
   await createCat(page, catA);
   await createCat(page, catB);
-  await fillManualTransferForm(page, { senderCatName: catA, receiverCatName: catB, amount: 90 });
+  await fillManualTransferForm(page, { senderName: catA, receiverCatName: catB, amount: 90 });
   await confirmSend(page);
   await expect(toast(page, "Treats sent.")).toBeVisible();
 
@@ -71,8 +71,8 @@ test("both charts render and reflow from a 2-up grid to a single column below 76
   const receiver = uniqueCatName("Layout-Receiver");
   await createCat(page, sender);
   await createCat(page, receiver);
-  await topUp(page, sender, 500);
-  await fillManualTransferForm(page, { senderCatName: sender, receiverCatName: receiver, amount: 30 });
+  await topUp(page, 500);
+  await fillManualTransferForm(page, { senderName: sender, receiverCatName: receiver, amount: 30 });
   await confirmSend(page);
   await expect(toast(page, "Treats sent.")).toBeVisible();
 

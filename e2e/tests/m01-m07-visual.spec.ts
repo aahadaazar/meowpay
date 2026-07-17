@@ -64,7 +64,7 @@ test.describe("M1/M7 dashboard visual pass", () => {
     await gotoDashboard(page);
     await createCat(page, catA);
     await createCat(page, catB);
-    await fillManualTransferForm(page, { senderCatName: catA, receiverCatName: catB, amount: 50, note: "visual pass fixture" });
+    await fillManualTransferForm(page, { senderName: catA, receiverCatName: catB, amount: 50, note: "visual pass fixture" });
     await confirmSend(page);
     await expect(toast(page, "Treats sent.")).toBeVisible();
     await context.storageState({ path: storageStatePath });

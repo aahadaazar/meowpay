@@ -1,13 +1,14 @@
 export type CatOption = {
-  id: string;
+  walletId: string;
   name: string;
+  balance?: number;
 };
 
 export type TransferDraft = {
   idempotencyKey: string;
-  senderCatId: string;
+  senderWalletId: string;
   senderName: string;
-  receiverCatId: string;
+  receiverWalletId: string;
   receiverName: string;
   amount: number;
   note: string | null;

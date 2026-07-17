@@ -1,7 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
 
 /** Thin page-object helpers shared across milestone specs, built from the real markup in
- * frontend/components/{realtime-dashboard,cat-card,new-cat-dialog,topup-presets,
+ * frontend/components/{realtime-dashboard,cat-card,new-cat-dialog,wallet-hero,
  * transfer-composer/*,ledger-trail}.tsx — see each component for the source of truth. */
 
 export async function gotoDashboard(page: Page) {
@@ -19,8 +19,8 @@ export async function catBalance(page: Page, catName: string): Promise<number> {
   return Number(digits);
 }
 
-export async function totalHeroAmount(page: Page): Promise<number> {
-  const text = await page.getByRole("region", { name: "Total treats" }).getByText(/treats$/).innerText();
+export async function walletHeroAmount(page: Page): Promise<number> {
+  const text = await page.getByRole("region", { name: "Your wallet" }).getByText(/treats$/).innerText();
   const digits = text.replace(/[^0-9]/g, "");
   return Number(digits);
 }
@@ -33,25 +33,26 @@ export async function createCat(page: Page, name: string) {
   await dialog.waitFor({ state: "hidden" });
 }
 
-export function topupPresets(page: Page, catName: string): Locator {
-  return page.getByLabel(`Top up ${catName}`);
+export function topupPresets(page: Page): Locator {
+  return page.getByLabel("Top-up shortcuts");
 }
 
-export async function topUp(page: Page, catName: string, amount: 100 | 500 | 1000) {
-  await topupPresets(page, catName).getByRole("button", { name: `+${amount.toLocaleString()}` }).click();
+export async function topUp(page: Page, amount: number) {
+  await page.getByLabel("Add treats").fill(String(amount));
+  await page.getByRole("button", { name: "Add treats" }).click();
 }
 
 export type TransferFormInput = {
-  senderCatName: string;
+  senderName: string;
   receiverCatName: string;
   amount: number;
   note?: string;
 };
 
 export async function fillManualTransferForm(page: Page, input: TransferFormInput) {
-  const section = page.getByRole("region", { name: "Send treats cat to cat" });
-  await section.locator("#sender-cat").selectOption({ label: input.senderCatName });
-  await section.locator("#receiver-cat").selectOption({ label: input.receiverCatName });
+  const section = page.getByRole("region", { name: "Fund a cat or send cat to cat" });
+  await section.locator("#sender-wallet").selectOption({ label: input.senderName });
+  await section.locator("#receiver-wallet").selectOption({ label: input.receiverCatName });
   await section.locator("#transfer-amount").fill(String(input.amount));
   if (input.note) await section.locator("#transfer-note").fill(input.note);
   await section.getByRole("button", { name: "Review transfer" }).click();

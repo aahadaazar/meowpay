@@ -1,5 +1,6 @@
 export type CatSummary = {
   id: string;
+  walletId: string;
   name: string;
   balance: number;
   createdAt: string;
@@ -9,6 +10,8 @@ export type Me = {
   id: string;
   email: string | null;
   displayName: string;
+  walletId: string;
+  balance: number;
   cats: CatSummary[];
 };
 
@@ -19,8 +22,8 @@ type ApiError = {
 
 export type ExecuteTransferInput = {
   idempotencyKey: string;
-  senderCatId: string;
-  receiverCatId: string;
+  senderWalletId: string;
+  receiverWalletId: string;
   amount: number;
   note: string | null;
   source: "manual" | "agent";
@@ -28,19 +31,18 @@ export type ExecuteTransferInput = {
 
 export type TopupInput = {
   idempotencyKey: string;
-  catId: string;
-  amount: 100 | 500 | 1000;
+  amount: number;
 };
 
 export type TransferResponse = {
   id: string;
   idempotencyKey: string;
-  senderCatId: string;
-  receiverCatId: string;
+  senderWalletId: string;
+  receiverWalletId: string;
   amount: number;
   note: string | null;
-  source: "manual" | "agent" | "topup" | "welcome_grant";
-  initiatedBy: string | null;
+  source: "manual" | "agent" | "topup";
+  initiatedBy: string;
   status: "completed" | "failed";
   failureReason: string | null;
   createdAt: string;
@@ -75,6 +77,12 @@ export function createCat(accessToken: string, name: string): Promise<CatSummary
     method: "POST",
     body: JSON.stringify({ name }),
   });
+}
+
+export type CatRosterEntry = { id: string; walletId: string; name: string };
+
+export function getCatRoster(accessToken: string): Promise<CatRosterEntry[]> {
+  return request<CatRosterEntry[]>("/cats", accessToken);
 }
 
 export async function executeTransfer(accessToken: string, input: ExecuteTransferInput): Promise<TransferResponse> {
