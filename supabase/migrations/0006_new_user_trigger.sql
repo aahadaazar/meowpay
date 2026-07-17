@@ -16,6 +16,9 @@ BEGIN
         )
     );
 
+    INSERT INTO public.wallets (kind, human_id, balance)
+    VALUES ('human', NEW.id, 0);
+
     RETURN NEW;
 END;
 $$;
