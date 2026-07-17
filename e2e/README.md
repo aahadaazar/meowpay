@@ -17,21 +17,18 @@ backend auth endpoint. Several tests need **multiple, independently-authenticate
 isolation, cross-human transfers), which driving the real signup form for each one makes slow.
 
 `frontend/app/api/test/login/route.ts` is a **test-only** route, inert unless
-`E2E_TEST_MODE=true`, that mints a **real** Supabase session (via the service-role admin API's
-`createUser` + a fixed test password, then `signInWithPassword` — the same call the real login
-form makes) for a freshly-created human. It skips *filling out the signup form*, not
-verification: every session it produces is genuinely JWT-valid and subject to the same backend
-(`SecurityConfig`) and RLS (ADR 0012) checks as a real login.
+`E2E_TEST_MODE=true`, that mints a **real** Supabase session for a human, given just an email and
+display name — the exact anon-key `signUp`/`signInWithPassword` calls the real signup/login forms
+make, with a fixed test password and the same duplicate-email fallback `signup-form.tsx` uses. It
+skips *filling out the signup form*, not verification: every session it produces is genuinely
+JWT-valid and subject to the same backend (`SecurityConfig`) and RLS (ADR 0012) checks as a real
+login. No service-role key involved — it's the anon key the app already ships to the browser.
 
 **Never set `E2E_TEST_MODE=true` outside a test run.**
 
 ## Setup
 
-1. In the repo root `.env`, set:
-   ```
-   E2E_TEST_MODE=true
-   SUPABASE_SERVICE_ROLE_KEY=...   # Project Settings → API → service_role, in the Supabase dashboard
-   ```
+1. In the repo root `.env`, set `E2E_TEST_MODE=true`.
 2. Bring the stack up (`docker compose up --build`, or `npm run dev` + `./gradlew bootRun`).
 3. `cd e2e && npm install`
 4. Copy `.env.example` to `.env` if your ports differ from the defaults (`localhost:3000` /
@@ -56,11 +53,22 @@ baseline; otherwise a plain `npm test` diffs against the committed baselines.
 
 ## Test data
 
-Every run mints **fresh, uniquely-emailed test humans and uniquely-named cats**
-(`fixtures/ids.ts`) — nothing is reset or deleted between runs. This matches the product's own
+**Cats are always fresh** — every one is minted with a uniquely-named `uniqueCatName()`
+(`fixtures/ids.ts`), never reused, and nothing is ever deleted. This matches the product's own
 model: the ledger is append-only and audit-forever by design (ADR 0009), so accumulating rows in
 the configured Supabase project across runs is expected, not a leak to clean up. Point this suite
 at a scratch/dev Supabase project rather than a real production one.
+
+**Humans are a mix of fresh and reused.** Signup/login is frictionless now (no magic-link rate
+limit), so most tests just need an *isolated* account, not a *never-before-used* one —
+`loginAsFixedHuman(context, "A" | "B")` (`fixtures/auth.ts`) logs into one of two permanent
+accounts instead. A test still needs `loginAsNewHuman` if it asserts something only true from a
+zero-history starting point: an empty-state UI, an exact row/total count, or an account-wide total
+(`totalHeroAmount`, or the unscoped `ledgerRowByCounterparty` locator) — those aren't safe against
+a shared account because `playwright.config.ts` runs `fullyParallel`, and another worker can be
+acting on the same fixed account at the same moment. Per-cat/per-transfer assertions (`catBalance`,
+a dropdown option, a named chart entry) are unaffected by concurrent activity on other cats, so
+those are exactly the tests that moved to the two fixed accounts.
 
 ## Layout
 
@@ -68,7 +76,8 @@ at a scratch/dev Supabase project rather than a real production one.
 fixtures/
   config.ts          — baseURL / backendURL (defaults to the docker-compose ports)
   ids.ts              — unique email / cat-name generators
-  auth.ts             — loginAsNewHuman(context, displayName) via the test-login route
+  auth.ts             — loginAsNewHuman(context, displayName) / loginAsFixedHuman(context, slot)
+                         via the test-login route
   api.ts              — authenticated direct-backend requests, for edge cases the UI has no
                          widget for (ownership rejection, the top-up allowlist/cap)
   dashboard-page.ts    — page-object helpers over the real component markup

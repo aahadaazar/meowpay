@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsNewHuman } from "../fixtures/auth";
+import { loginAsFixedHuman, loginAsNewHuman } from "../fixtures/auth";
 import { baseURL } from "../fixtures/config";
 import { catCard, createCat, gotoDashboard, ledgerRowByCounterparty, ledgerTrailDesktop, ledgerTrailMobile, totalHeroAmount } from "../fixtures/dashboard-page";
 import { uniqueCatName } from "../fixtures/ids";
@@ -37,7 +37,8 @@ test("a new cat's welcome grant lands in the ledger trail live, with no page ref
 });
 
 test("the ledger trail collapses from a table to stacked cards below 768px", async ({ context, page }) => {
-  await loginAsNewHuman(context, "Responsive Human");
+  // Reused account: pure layout check, no total/row-count assertion to race.
+  await loginAsFixedHuman(context, "B");
   await gotoDashboard(page);
   await createCat(page, uniqueCatName("Responsive-Cat"));
 

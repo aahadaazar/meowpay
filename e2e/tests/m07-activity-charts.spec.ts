@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsNewHuman } from "../fixtures/auth";
+import { loginAsFixedHuman, loginAsNewHuman } from "../fixtures/auth";
 import { confirmSend, createCat, fillManualTransferForm, gotoDashboard, toast, topUp } from "../fixtures/dashboard-page";
 import { uniqueCatName } from "../fixtures/ids";
 
@@ -21,7 +21,8 @@ test("top recipients stays empty until the first sent treat, even though the flo
 });
 
 test("sending treats populates the top recipients chart, and hovering shows its tooltip", async ({ context, page }) => {
-  await loginAsNewHuman(context, "Chart Recipient Human");
+  // Reused account: the recipient button is matched by this test's own unique cat name + amount.
+  await loginAsFixedHuman(context, "A");
   await gotoDashboard(page);
   const sender = uniqueCatName("Chart-Sender");
   const receiver = uniqueCatName("Chart-Receiver");
@@ -64,7 +65,7 @@ test("an internal own-cat transfer nets to zero in the flow chart, but its recip
 });
 
 test("both charts render and reflow from a 2-up grid to a single column below 768px", async ({ context, page }) => {
-  await loginAsNewHuman(context, "Chart Layout Human");
+  await loginAsFixedHuman(context, "B");
   await gotoDashboard(page);
   const sender = uniqueCatName("Layout-Sender");
   const receiver = uniqueCatName("Layout-Receiver");

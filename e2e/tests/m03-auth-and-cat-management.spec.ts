@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { loginAsNewHuman } from "../fixtures/auth";
+import { loginAsFixedHuman, loginAsNewHuman } from "../fixtures/auth";
 import { baseURL } from "../fixtures/config";
 import { catBalance, catCard, createCat, gotoDashboard } from "../fixtures/dashboard-page";
 import { uniqueCatName, uniqueEmail } from "../fixtures/ids";
@@ -95,7 +95,8 @@ test.describe("cat management", () => {
   });
 
   test("a second cat also receives its 500-treat welcome grant", async ({ context, page }) => {
-    await loginAsNewHuman(context, "Two Cat Human");
+    // Reused account: only checks each cat's own balance by name, unaffected by its history.
+    await loginAsFixedHuman(context, "A");
     await gotoDashboard(page);
 
     const catA = uniqueCatName("Momo");
@@ -112,7 +113,9 @@ test.describe("cat management", () => {
   test("one human's cats and balances never appear on another human's dashboard", async ({ browser }) => {
     const contextA = await browser.newContext({ baseURL });
     const pageA = await contextA.newPage();
-    await loginAsNewHuman(contextA, "Human A");
+    // A only needs its own cat checked by name — reused account is fine. B must be genuinely
+    // fresh: this test asserts B's *empty state*, which a reused account would never show again.
+    await loginAsFixedHuman(contextA, "A");
     await gotoDashboard(pageA);
     const catA = uniqueCatName("Only-A-Sees-This");
     await createCat(pageA, catA);

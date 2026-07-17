@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
-import { loginAsNewHuman } from "../fixtures/auth";
+import { loginAsFixedHuman, loginAsNewHuman } from "../fixtures/auth";
 import { backendRequestAs } from "../fixtures/api";
 import { baseURL } from "../fixtures/config";
 import { catBalance, createCat, gotoDashboard, topUp, topupPresets, totalHeroAmount } from "../fixtures/dashboard-page";
@@ -27,7 +27,7 @@ test("a preset pill tops up the cat and the total, live, with no page refresh", 
 });
 
 test("each preset pill keeps its 44px touch target at a mobile viewport (wraps rather than shrinks)", async ({ context, page }) => {
-  await loginAsNewHuman(context, "Touch Target Human");
+  await loginAsFixedHuman(context, "A");
   await gotoDashboard(page);
   const cat = uniqueCatName("Mobile-Cat");
   await createCat(page, cat);
@@ -42,7 +42,7 @@ test("each preset pill keeps its 44px touch target at a mobile viewport (wraps r
 });
 
 test("rejects an amount that is not on the preset allowlist", async ({ context }) => {
-  const human = await loginAsNewHuman(context, "Allowlist Human");
+  const human = await loginAsFixedHuman(context, "B");
   const page = await context.newPage();
   await gotoDashboard(page);
   const cat = uniqueCatName("Allowlist-Cat");
@@ -61,14 +61,14 @@ test("rejects an amount that is not on the preset allowlist", async ({ context }
 test("rejects topping up a cat the caller does not own", async ({ browser }) => {
   const contextOwner = await browser.newContext({ baseURL });
   const ownerPage = await contextOwner.newPage();
-  await loginAsNewHuman(contextOwner, "Wallet Owner");
+  await loginAsFixedHuman(contextOwner, "A");
   await gotoDashboard(ownerPage);
   const ownedCat = uniqueCatName("Owned-Wallet");
   await createCat(ownerPage, ownedCat);
   const catId = await ownerPage.locator("#receiver-cat option", { hasText: ownedCat }).getAttribute("value");
 
   const contextAttacker = await browser.newContext({ baseURL });
-  const attacker = await loginAsNewHuman(contextAttacker, "Wallet Attacker");
+  const attacker = await loginAsFixedHuman(contextAttacker, "B");
 
   const api = await backendRequestAs(attacker);
   const response = await api.post("/api/wallet/topup", {

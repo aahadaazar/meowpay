@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { test, expect } from "@playwright/test";
-import { loginAsNewHuman } from "../fixtures/auth";
+import { loginAsFixedHuman, loginAsNewHuman } from "../fixtures/auth";
 import { backendRequestAs } from "../fixtures/api";
 import { baseURL } from "../fixtures/config";
 import {
@@ -51,7 +51,9 @@ test("sending to another human's cat moves treats out of the sender's total and 
 
   const contextB = await browser.newContext({ baseURL });
   const pageB = await contextB.newPage();
-  await loginAsNewHuman(contextB, "Cross Human Receiver");
+  // Receiver only gets its own cat's balance checked by name — reused account is fine. Sender
+  // (above) reads the account-wide total hero before/after, which isn't safe to reuse.
+  await loginAsFixedHuman(contextB, "B");
   await gotoDashboard(pageB);
   const receiverCat = uniqueCatName("Cross-Receiver");
   await createCat(pageB, receiverCat);
@@ -69,7 +71,7 @@ test("sending to another human's cat moves treats out of the sender's total and 
 });
 
 test("insufficient balance fails the transfer and surfaces the backend's failure_reason verbatim", async ({ context, page }) => {
-  await loginAsNewHuman(context, "Insufficient Funds Human");
+  await loginAsFixedHuman(context, "A");
   await gotoDashboard(page);
   const sender = uniqueCatName("Poor");
   const receiver = uniqueCatName("Rich-Target");
@@ -85,7 +87,7 @@ test("insufficient balance fails the transfer and surfaces the backend's failure
 });
 
 test("the receiver field never offers the currently-selected sender cat", async ({ context, page }) => {
-  await loginAsNewHuman(context, "Self Transfer Human");
+  await loginAsFixedHuman(context, "A");
   await gotoDashboard(page);
   const catA = uniqueCatName("Self-A");
   const catB = uniqueCatName("Self-B");
@@ -98,7 +100,7 @@ test("the receiver field never offers the currently-selected sender cat", async 
 });
 
 test("form validation rejects a non-positive amount", async ({ context, page }) => {
-  await loginAsNewHuman(context, "Validation Human");
+  await loginAsFixedHuman(context, "B");
   await gotoDashboard(page);
   const catA = uniqueCatName("Val-A");
   const catB = uniqueCatName("Val-B");
@@ -114,7 +116,7 @@ test("form validation rejects a non-positive amount", async ({ context, page }) 
 });
 
 test("a retried submission with the same idempotency key never double-charges", async ({ context }) => {
-  const human = await loginAsNewHuman(context, "Idempotency Human");
+  const human = await loginAsFixedHuman(context, "A");
   const page = await context.newPage();
   await gotoDashboard(page);
   const sender = uniqueCatName("Idem-Sender");
@@ -149,7 +151,7 @@ test("a retried submission with the same idempotency key never double-charges", 
 test("rejects a senderCatId the caller does not own", async ({ browser }) => {
   const contextOwner = await browser.newContext({ baseURL });
   const ownerPage = await contextOwner.newPage();
-  await loginAsNewHuman(contextOwner, "Cat Owner");
+  await loginAsFixedHuman(contextOwner, "A");
   await gotoDashboard(ownerPage);
   const ownedCat = uniqueCatName("Not-Yours");
   await createCat(ownerPage, ownedCat);
@@ -157,7 +159,7 @@ test("rejects a senderCatId the caller does not own", async ({ browser }) => {
 
   const contextAttacker = await browser.newContext({ baseURL });
   const attackerPage = await contextAttacker.newPage();
-  const attacker = await loginAsNewHuman(contextAttacker, "Attacker");
+  const attacker = await loginAsFixedHuman(contextAttacker, "B");
   await gotoDashboard(attackerPage);
   const attackerCat = uniqueCatName("Attacker-Cat");
   await createCat(attackerPage, attackerCat);
