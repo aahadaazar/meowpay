@@ -4,8 +4,8 @@ import java.util.UUID
 
 data class ExecuteTransferRequest(
     val idempotencyKey: UUID,
-    val senderCatId: UUID,
-    val receiverCatId: UUID,
+    val senderWalletId: UUID,
+    val receiverWalletId: UUID,
     val amount: Long,
     val note: String? = null,
     val source: String? = "manual",

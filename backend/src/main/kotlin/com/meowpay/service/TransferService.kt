@@ -21,13 +21,13 @@ class TransferService(
 ) {
     fun execute(humanId: UUID, request: ExecuteTransferRequest): TransferResponse {
         val source = normalizeClientSource(request.source)
-        ownershipGuard.requireOwnedSender(humanId, request.senderCatId)
-        ownershipGuard.requireNonSystemRecipient(request.receiverCatId)
+        ownershipGuard.requireOwnedSender(humanId, request.senderWalletId)
+        ownershipGuard.requireCatRecipient(request.receiverWalletId)
 
         return executeTransfer(
             idempotencyKey = request.idempotencyKey,
-            senderCatId = request.senderCatId,
-            receiverCatId = request.receiverCatId,
+            senderWalletId = request.senderWalletId,
+            receiverWalletId = request.receiverWalletId,
             amount = request.amount,
             note = request.note,
             source = source,
@@ -36,13 +36,24 @@ class TransferService(
     }
 
     fun topUp(humanId: UUID, request: TopupRequest): TransferResponse {
-        ownershipGuard.requireOwnedCat(humanId, request.catId)
         validateTopupAmount(request.amount)
+        val humanWalletId = jdbcClient.sql(
+            """
+            SELECT id
+            FROM public.wallets
+            WHERE kind = 'human'
+              AND human_id = :humanId
+            """.trimIndent(),
+        )
+            .param("humanId", humanId)
+            .query(UUID::class.java)
+            .optional()
+            .orElseThrow { BadRequestException("human_wallet_not_found", "The authenticated human has no wallet.") }
 
         return executeTransfer(
             idempotencyKey = request.idempotencyKey,
-            senderCatId = treasuryCatId,
-            receiverCatId = request.catId,
+            senderWalletId = treasuryWalletId,
+            receiverWalletId = humanWalletId,
             amount = request.amount,
             note = null,
             source = "topup",
@@ -52,8 +63,8 @@ class TransferService(
 
     private fun executeTransfer(
         idempotencyKey: UUID,
-        senderCatId: UUID,
-        receiverCatId: UUID,
+        senderWalletId: UUID,
+        receiverWalletId: UUID,
         amount: Long,
         note: String?,
         source: String,
@@ -65,8 +76,8 @@ class TransferService(
             SELECT *
             FROM public.execute_transfer(
                 :idempotencyKey,
-                :senderCatId,
-                :receiverCatId,
+                :senderWalletId,
+                :receiverWalletId,
                 :amount,
                 :note,
                 :source,
@@ -75,8 +86,8 @@ class TransferService(
             """.trimIndent(),
         )
             .param("idempotencyKey", idempotencyKey)
-            .param("senderCatId", senderCatId)
-            .param("receiverCatId", receiverCatId)
+            .param("senderWalletId", senderWalletId)
+            .param("receiverWalletId", receiverWalletId)
             .param("amount", amount)
             .param("note", note?.trim()?.ifBlank { null })
             .param("source", source)
@@ -86,10 +97,10 @@ class TransferService(
     }
 
     private fun validateTopupAmount(amount: Long) {
-        if (amount !in topupAmounts) {
+        if (amount <= 0) {
             throw BadRequestException(
-                "topup_amount_not_allowed",
-                "amount must be one of: ${topupAmounts.sorted().joinToString()}.",
+                "invalid_amount",
+                "amount must be greater than zero.",
             )
         }
 
@@ -127,16 +138,15 @@ class TransferService(
 
     private companion object {
         val clientSources = setOf("manual", "agent")
-        val serverOnlySources = setOf("topup", "welcome_grant")
-        val topupAmounts = setOf(100L, 500L, 1000L)
-        val treasuryCatId: UUID = UUID.fromString("00000000-0000-4000-8000-000000000001")
+        val serverOnlySources = setOf("topup")
+        val treasuryWalletId: UUID = UUID.fromString("00000000-0000-4000-8000-000000000001")
 
         val transferMapper = RowMapper { rs: ResultSet, _: Int ->
             TransferResponse(
                 id = rs.getObject("id", UUID::class.java),
                 idempotencyKey = rs.getObject("idempotency_key", UUID::class.java),
-                senderCatId = rs.getObject("sender_cat_id", UUID::class.java),
-                receiverCatId = rs.getObject("receiver_cat_id", UUID::class.java),
+                senderWalletId = rs.getObject("sender_wallet_id", UUID::class.java),
+                receiverWalletId = rs.getObject("receiver_wallet_id", UUID::class.java),
                 amount = rs.getLong("amount"),
                 note = rs.getString("note"),
                 source = rs.getString("source"),

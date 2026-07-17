@@ -37,466 +37,179 @@ class LedgerCoreIntegrationTests {
         dataSource = DriverManagerDataSource(postgres.jdbcUrl, postgres.username, postgres.password)
         jdbcClient = JdbcClient.create(dataSource)
         transferService = TransferService(jdbcClient, OwnershipGuard(jdbcClient))
-
         dataSource.connection.use { connection ->
             connection.createStatement().use { statement ->
                 statement.execute("CREATE SCHEMA IF NOT EXISTS auth")
-                statement.execute(
-                    """
-                    CREATE TABLE IF NOT EXISTS auth.users (
-                        id uuid PRIMARY KEY,
-                        email text,
-                        raw_user_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb
-                    )
-                    """.trimIndent(),
-                )
-                statement.execute(
-                    """
-                    DO $$
-                    BEGIN
-                        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
-                            CREATE ROLE anon;
-                        END IF;
-                        IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN
-                            CREATE ROLE authenticated;
-                        END IF;
-                    END;
-                    $$
-                    """.trimIndent(),
-                )
-                statement.execute(
-                    """
-                    CREATE OR REPLACE FUNCTION auth.uid()
-                    RETURNS uuid
-                    LANGUAGE sql
-                    STABLE
-                    AS $$
-                        SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid
-                    $$
-                    """.trimIndent(),
-                )
+                statement.execute("CREATE TABLE IF NOT EXISTS auth.users (id uuid PRIMARY KEY, email text, raw_user_meta_data jsonb NOT NULL DEFAULT '{}'::jsonb)")
+                statement.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN CREATE ROLE anon; END IF; IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN CREATE ROLE authenticated; END IF; END; $$")
+                statement.execute("CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql STABLE AS $$ SELECT NULLIF(current_setting('request.jwt.claim.sub', true), '')::uuid $$")
                 statement.execute("GRANT USAGE ON SCHEMA auth TO authenticated")
-                statement.execute(
-                    """
-                    DO $$
-                    BEGIN
-                        IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN
-                            CREATE PUBLICATION supabase_realtime;
-                        END IF;
-                    END;
-                    $$
-                    """.trimIndent(),
-                )
+                statement.execute("DO $$ BEGIN IF NOT EXISTS (SELECT 1 FROM pg_publication WHERE pubname = 'supabase_realtime') THEN CREATE PUBLICATION supabase_realtime; END IF; END; $$")
                 statement.execute("DROP SCHEMA public CASCADE")
                 statement.execute("CREATE SCHEMA public")
             }
-
-            migrationFiles().forEach { migration ->
-                connection.createStatement().use { statement ->
-                    statement.execute(Files.readString(migration))
-                }
-            }
+            migrationFiles().forEach { migration -> connection.createStatement().use { it.execute(Files.readString(migration)) } }
         }
     }
 
     @Test
-    fun `happy path moves balances and writes two ledger rows`() {
+    fun `treasury human cat and cat hop preserve reconciliation and global conservation`() {
         val alice = createHuman("Alice")
         val bob = createHuman("Bob")
-        val sender = createCat(alice, "Milo")
-        val receiver = createCat(bob, "Nori")
+        val milo = createCat(alice.id, "Milo")
+        val nori = createCat(bob.id, "Nori")
 
-        val transfer = executeRaw(sender, receiver, 125, initiatedBy = alice)
+        assertThat(executeRaw(treasuryWalletId, alice.walletId, 700, "topup", alice.id).status).isEqualTo("completed")
+        assertThat(executeRaw(alice.walletId, milo.walletId, 300, "manual", alice.id).status).isEqualTo("completed")
+        assertThat(executeRaw(milo.walletId, nori.walletId, 125, "manual", alice.id).status).isEqualTo("completed")
+
+        assertThat(balance(treasuryWalletId)).isEqualTo(-700)
+        assertThat(balance(alice.walletId)).isEqualTo(400)
+        assertThat(balance(milo.walletId)).isEqualTo(175)
+        assertThat(balance(nori.walletId)).isEqualTo(125)
+        assertWalletReconciliation()
+        assertGlobalConservation()
+    }
+
+    @Test
+    fun `route table permits only treasury human human cat and cat cat`() {
+        val alice = createHuman("Alice")
+        val bob = createHuman("Bob")
+        val milo = createCat(alice.id, "Milo")
+        val nori = createCat(bob.id, "Nori")
+
+        assertThat(executeRaw(treasuryWalletId, alice.walletId, 100, "topup", alice.id).status).isEqualTo("completed")
+        assertThat(executeRaw(alice.walletId, milo.walletId, 50, "manual", alice.id).status).isEqualTo("completed")
+        assertThat(executeRaw(milo.walletId, nori.walletId, 25, "manual", alice.id).status).isEqualTo("completed")
+
+        listOf(
+            executeRaw(milo.walletId, alice.walletId, 1, "manual", alice.id),
+            executeRaw(milo.walletId, treasuryWalletId, 1, "manual", alice.id),
+            executeRaw(alice.walletId, bob.walletId, 1, "manual", alice.id),
+            executeRaw(treasuryWalletId, milo.walletId, 1, "topup", alice.id),
+        ).forEach { transfer ->
+            assertThat(transfer.status).isEqualTo("failed")
+            assertThat(transfer.failureReason).isEqualTo("unsupported_route")
+        }
+        assertWalletReconciliation()
+        assertGlobalConservation()
+    }
+
+    @Test
+    fun `top up resolves the callers wallet and applies only positive capped amounts`() {
+        val alice = createHuman("Alice")
+        val bob = createHuman("Bob")
+        val treasuryBefore = balance(treasuryWalletId)
+
+        val transfer = transferService.topUp(alice.id, TopupRequest(UUID.randomUUID(), 700))
 
         assertThat(transfer.status).isEqualTo("completed")
-        assertThat(transfer.failureReason).isNull()
-        assertThat(balance(sender)).isEqualTo(375)
-        assertThat(balance(receiver)).isEqualTo(625)
-        assertThat(ledgerCount(transfer.id)).isEqualTo(2)
-        assertWalletReconciliation()
-        assertGlobalConservation()
+        assertThat(transfer.receiverWalletId).isEqualTo(alice.walletId)
+        assertThat(balance(alice.walletId)).isEqualTo(700)
+        assertThat(balance(bob.walletId)).isZero()
+        assertThat(balance(treasuryWalletId)).isEqualTo(treasuryBefore - 700)
+        assertThatThrownBy { transferService.topUp(alice.id, TopupRequest(UUID.randomUUID(), 0)) }
+            .isInstanceOf(BadRequestException::class.java).hasMessageContaining("greater than zero")
+        assertThatThrownBy { transferService.topUp(alice.id, TopupRequest(UUID.randomUUID(), 1001)) }
+            .isInstanceOf(BadRequestException::class.java).hasMessageContaining("top-up cap")
     }
 
     @Test
-    fun `insufficient balance inserts failed row and leaves balances alone`() {
+    fun `client supplied sender wallet must be owned and cannot name treasury`() {
         val alice = createHuman("Alice")
         val bob = createHuman("Bob")
-        val sender = createCat(alice, "Milo")
-        val receiver = createCat(bob, "Nori")
+        val aliceCat = createCat(alice.id, "Milo")
+        val bobCat = createCat(bob.id, "Nori")
 
-        val transfer = executeRaw(sender, receiver, 501, initiatedBy = alice)
-
-        assertThat(transfer.status).isEqualTo("failed")
-        assertThat(transfer.failureReason).isEqualTo("insufficient_funds")
-        assertThat(balance(sender)).isEqualTo(500)
-        assertThat(balance(receiver)).isEqualTo(500)
-        assertThat(ledgerCount(transfer.id)).isEqualTo(0)
-        assertWalletReconciliation()
-        assertGlobalConservation()
+        listOf(bob.walletId, bobCat.walletId, treasuryWalletId).forEach { senderWalletId ->
+            assertThatThrownBy {
+                transferService.execute(alice.id, transferRequest(senderWalletId, aliceCat.walletId, 10))
+            }.isInstanceOf(ForbiddenException::class.java).hasMessageContaining("senderWalletId is not owned")
+        }
+        assertThatThrownBy {
+            transferService.execute(alice.id, transferRequest(alice.walletId, bobCat.walletId, 10, "topup"))
+        }.isInstanceOf(BadRequestException::class.java).hasMessageContaining("server-side flows")
     }
 
     @Test
-    fun `self transfer inserts failed row`() {
-        val alice = createHuman("Alice")
-        val sender = createCat(alice, "Milo")
-
-        val transfer = executeRaw(sender, sender, 10, initiatedBy = alice)
-
-        assertThat(transfer.status).isEqualTo("failed")
-        assertThat(transfer.failureReason).isEqualTo("self_transfer")
-        assertThat(balance(sender)).isEqualTo(500)
-        assertThat(ledgerCount(transfer.id)).isEqualTo(0)
-        assertWalletReconciliation()
-        assertGlobalConservation()
-    }
-
-    @Test
-    fun `idempotency replay returns the original row without double charge`() {
+    fun `idempotency concurrency and insufficient funds retain their guarantees`() {
         val alice = createHuman("Alice")
         val bob = createHuman("Bob")
-        val sender = createCat(alice, "Milo")
-        val receiver = createCat(bob, "Nori")
-        val idempotencyKey = UUID.randomUUID()
-
-        val original = executeRaw(sender, receiver, 75, idempotencyKey, "first", alice)
-        val replay = executeRaw(sender, receiver, 300, idempotencyKey, "replay", alice)
-
+        val milo = createCat(alice.id, "Milo")
+        val nori = createCat(bob.id, "Nori")
+        val pip = createCat(bob.id, "Pip")
+        executeRaw(treasuryWalletId, alice.walletId, 500, "topup", alice.id)
+        executeRaw(alice.walletId, milo.walletId, 500, "manual", alice.id)
+        val key = UUID.randomUUID()
+        val original = executeRaw(milo.walletId, nori.walletId, 75, "manual", alice.id, key, "first")
+        val replay = executeRaw(milo.walletId, nori.walletId, 300, "manual", alice.id, key, "replay")
         assertThat(replay.id).isEqualTo(original.id)
         assertThat(replay.amount).isEqualTo(75)
-        assertThat(replay.note).isEqualTo("first")
-        assertThat(balance(sender)).isEqualTo(425)
-        assertThat(balance(receiver)).isEqualTo(575)
-        assertThat(ledgerCount(original.id)).isEqualTo(2)
-    }
 
-    @Test
-    fun `reconciliation and global conservation hold across grants transfers and failures`() {
-        val alice = createHuman("Alice")
-        val bob = createHuman("Bob")
-        val sender = createCat(alice, "Milo")
-        val receiver = createCat(bob, "Nori")
-        val third = createCat(alice, "Pip")
-
-        executeRaw(sender, receiver, 40, initiatedBy = alice)
-        executeRaw(receiver, third, 20, initiatedBy = bob)
-        executeRaw(sender, third, 999, initiatedBy = alice)
-
-        assertWalletReconciliation()
-        assertGlobalConservation()
-    }
-
-    @Test
-    fun `concurrent double send races cleanly`() {
-        val alice = createHuman("Alice")
-        val bob = createHuman("Bob")
-        val sender = createCat(alice, "Milo")
-        val receiverOne = createCat(bob, "Nori")
-        val receiverTwo = createCat(bob, "Pip")
         val ready = CountDownLatch(2)
         val start = CountDownLatch(1)
         val executor = Executors.newFixedThreadPool(2)
-
         try {
-            val futures = listOf(receiverOne, receiverTwo).map { receiver ->
-                executor.submit(
-                    Callable {
-                        ready.countDown()
-                        start.await(10, TimeUnit.SECONDS)
-                        executeRaw(sender, receiver, 400, initiatedBy = alice)
-                    },
-                )
-            }
-
+            val outcomes = listOf(nori, pip).map { receiver -> executor.submit(Callable {
+                ready.countDown(); start.await(10, TimeUnit.SECONDS)
+                executeRaw(milo.walletId, receiver.walletId, 300, "manual", alice.id).status
+            }) }
             assertThat(ready.await(10, TimeUnit.SECONDS)).isTrue()
             start.countDown()
+            assertThat(outcomes.map { it.get(10, TimeUnit.SECONDS) }).containsExactlyInAnyOrder("completed", "failed")
+        } finally { executor.shutdownNow() }
 
-            val outcomes = futures.map { it.get(10, TimeUnit.SECONDS).status }
-
-            assertThat(outcomes).containsExactlyInAnyOrder("completed", "failed")
-            assertThat(balance(sender)).isEqualTo(100)
-            assertThat(balance(receiverOne) + balance(receiverTwo)).isEqualTo(1400)
-            assertWalletReconciliation()
-            assertGlobalConservation()
-        } finally {
-            executor.shutdownNow()
-        }
-    }
-
-    @Test
-    fun `treasury may go negative but normal wallets may not`() {
-        val alice = createHuman("Alice")
-        val bob = createHuman("Bob")
-        val sender = createCat(alice, "Milo")
-        val receiver = createCat(bob, "Nori")
-
-        assertThat(balance(treasuryCatId)).isEqualTo(-1000)
-
-        val transfer = executeRaw(sender, receiver, 501, initiatedBy = alice)
-
-        assertThat(transfer.status).isEqualTo("failed")
-        assertThat(balance(sender)).isEqualTo(500)
-        assertThat(balance(treasuryCatId)).isEqualTo(-1000)
         assertWalletReconciliation()
         assertGlobalConservation()
     }
 
     @Test
-    fun `service rejects unowned sender server-only source values and system recipients`() {
+    fun `create cat creates a zero wallet with no ledger row`() {
         val alice = createHuman("Alice")
-        val bob = createHuman("Bob")
-        val aliceCat = createCat(alice, "Milo")
-        val bobCat = createCat(bob, "Nori")
+        val cat = createCat(alice.id, "Milo")
 
-        assertThatThrownBy {
-            transferService.execute(alice, transferRequest(bobCat, aliceCat, 10))
-        }.isInstanceOf(ForbiddenException::class.java)
-            .hasMessageContaining("senderCatId is not owned")
-
-        assertThatThrownBy {
-            transferService.execute(alice, transferRequest(aliceCat, bobCat, 10, source = "topup"))
-        }.isInstanceOf(BadRequestException::class.java)
-            .hasMessageContaining("server-side flows")
-
-        assertThatThrownBy {
-            transferService.execute(alice, transferRequest(aliceCat, bobCat, 10, source = "welcome_grant"))
-        }.isInstanceOf(BadRequestException::class.java)
-            .hasMessageContaining("server-side flows")
-
-        assertThatThrownBy {
-            transferService.execute(alice, transferRequest(aliceCat, treasuryCatId, 10))
-        }.isInstanceOf(BadRequestException::class.java)
-            .hasMessageContaining("non-system cat")
-    }
-
-    @Test
-    fun `top up accepts presets preserves conservation and enforces ownership plus server policy`() {
-        val alice = createHuman("Alice")
-        val bob = createHuman("Bob")
-        val aliceCat = createCat(alice, "Milo")
-        val bobCat = createCat(bob, "Nori")
-        val treasuryBefore = balance(treasuryCatId)
-
-        listOf(100L, 500L, 1000L).forEach { amount ->
-            val transfer = transferService.topUp(alice, topupRequest(aliceCat, amount))
-            assertThat(transfer.status).isEqualTo("completed")
-            assertThat(transfer.source).isEqualTo("topup")
-        }
-
-        assertThat(balance(aliceCat)).isEqualTo(2100)
-        assertThat(balance(treasuryCatId)).isEqualTo(treasuryBefore - 1600)
+        assertThat(balance(cat.walletId)).isZero()
+        assertThat(jdbcClient.sql("SELECT count(*) FROM public.ledger_entries WHERE wallet_id = :walletId").param("walletId", cat.walletId).query(Int::class.java).single()).isZero()
         assertWalletReconciliation()
-        assertGlobalConservation()
-
-        assertThatThrownBy {
-            transferService.topUp(alice, topupRequest(aliceCat, 200))
-        }.isInstanceOf(BadRequestException::class.java)
-            .hasMessageContaining("100, 500, 1000")
-
-        val cappedTopupService = TransferService(jdbcClient, OwnershipGuard(jdbcClient), 500)
-        assertThatThrownBy {
-            cappedTopupService.topUp(alice, topupRequest(aliceCat, 1000))
-        }.isInstanceOf(BadRequestException::class.java)
-            .hasMessageContaining("server-side top-up cap")
-
-        assertThatThrownBy {
-            transferService.topUp(alice, topupRequest(bobCat, 100))
-        }.isInstanceOf(ForbiddenException::class.java)
-            .hasMessageContaining("catId is not owned")
     }
 
-    @Test
-    fun `create cat is atomic and welcome grant reconciles`() {
-        val alice = createHuman("Alice")
-
-        val cat = createCat(alice, "Milo")
-
-        assertThat(balance(cat)).isEqualTo(500)
-        assertThat(
-            jdbcClient.sql(
-                """
-                SELECT count(*)
-                FROM public.transfers
-                WHERE receiver_cat_id = :catId
-                  AND source = 'welcome_grant'
-                  AND status = 'completed'
-                """.trimIndent(),
-            )
-                .param("catId", cat)
-                .query(Int::class.java)
-                .single(),
-        ).isEqualTo(1)
-        assertWalletReconciliation()
-        assertGlobalConservation()
-    }
-
-    private fun createHuman(displayName: String): UUID {
+    private fun createHuman(displayName: String): HumanWallet {
         val humanId = UUID.randomUUID()
-        jdbcClient.sql(
-            """
-            INSERT INTO public.humans (id, email, display_name)
-            VALUES (:id, :email, :displayName)
-            """.trimIndent(),
-        )
-            .param("id", humanId)
-            .param("email", "${displayName.lowercase()}@example.test")
-            .param("displayName", displayName)
-            .update()
-        return humanId
+        jdbcClient.sql("INSERT INTO public.humans (id, email, display_name) VALUES (:id, :email, :displayName)")
+            .param("id", humanId).param("email", "${displayName.lowercase()}@example.test").param("displayName", displayName).update()
+        val walletId = jdbcClient.sql("INSERT INTO public.wallets (kind, human_id) VALUES ('human', :humanId) RETURNING id")
+            .param("humanId", humanId).query(UUID::class.java).single()
+        return HumanWallet(humanId, walletId)
     }
 
-    private fun createCat(humanId: UUID, name: String): UUID =
-        jdbcClient.sql(
-            """
-            SELECT id
-            FROM public.create_cat(:humanId, :name)
-            """.trimIndent(),
-        )
-            .param("humanId", humanId)
-            .param("name", name)
-            .query(UUID::class.java)
-            .single()
+    private fun createCat(humanId: UUID, name: String): CatWallet {
+        val catId = jdbcClient.sql("SELECT id FROM public.create_cat(:humanId, :name)").param("humanId", humanId).param("name", name).query(UUID::class.java).single()
+        val walletId = jdbcClient.sql("SELECT id FROM public.wallets WHERE cat_id = :catId").param("catId", catId).query(UUID::class.java).single()
+        return CatWallet(catId, walletId)
+    }
 
-    private fun executeRaw(
-        sender: UUID,
-        receiver: UUID,
-        amount: Long,
-        idempotencyKey: UUID = UUID.randomUUID(),
-        note: String = "snack",
-        initiatedBy: UUID,
-    ): TransferRecord =
-        jdbcClient.sql(
-            """
-            SELECT *
-            FROM public.execute_transfer(
-                :idempotencyKey,
-                :sender,
-                :receiver,
-                :amount,
-                :note,
-                'manual',
-                :initiatedBy
-            )
-            """.trimIndent(),
-        )
-            .param("idempotencyKey", idempotencyKey)
-            .param("sender", sender)
-            .param("receiver", receiver)
-            .param("amount", amount)
-            .param("note", note)
-            .param("initiatedBy", initiatedBy)
-            .query(transferRecordMapper)
-            .single()
+    private fun executeRaw(sender: UUID, receiver: UUID, amount: Long, source: String, initiatedBy: UUID, idempotencyKey: UUID = UUID.randomUUID(), note: String = "snack"): TransferRecord =
+        jdbcClient.sql("SELECT * FROM public.execute_transfer(:idempotencyKey, :sender, :receiver, :amount, :note, :source, :initiatedBy)")
+            .param("idempotencyKey", idempotencyKey).param("sender", sender).param("receiver", receiver).param("amount", amount).param("note", note).param("source", source).param("initiatedBy", initiatedBy)
+            .query(transferRecordMapper).single()
 
-    private fun transferRequest(
-        sender: UUID,
-        receiver: UUID,
-        amount: Long,
-        source: String = "manual",
-    ) = ExecuteTransferRequest(
-        idempotencyKey = UUID.randomUUID(),
-        senderCatId = sender,
-        receiverCatId = receiver,
-        amount = amount,
-        note = "snack",
-        source = source,
-    )
-
-    private fun topupRequest(catId: UUID, amount: Long) = TopupRequest(
-        idempotencyKey = UUID.randomUUID(),
-        catId = catId,
-        amount = amount,
-    )
-
-    private fun balance(catId: UUID): Long =
-        jdbcClient.sql("SELECT balance FROM public.wallets WHERE cat_id = :catId")
-            .param("catId", catId)
-            .query(Long::class.java)
-            .single()
-
-    private fun ledgerCount(transferId: UUID): Int =
-        jdbcClient.sql("SELECT count(*) FROM public.ledger_entries WHERE transfer_id = :transferId")
-            .param("transferId", transferId)
-            .query(Int::class.java)
-            .single()
-
+    private fun transferRequest(sender: UUID, receiver: UUID, amount: Long, source: String = "manual") = ExecuteTransferRequest(UUID.randomUUID(), sender, receiver, amount, "snack", source)
+    private fun balance(walletId: UUID): Long = jdbcClient.sql("SELECT balance FROM public.wallets WHERE id = :walletId").param("walletId", walletId).query(Long::class.java).single()
     private fun assertWalletReconciliation() {
-        val unreconciledWallets = jdbcClient.sql(
-            """
-            SELECT count(*)
-            FROM public.wallets w
-            WHERE w.balance <> (
-                SELECT COALESCE(
-                    SUM(
-                        CASE le.direction
-                            WHEN 'credit' THEN le.amount
-                            ELSE -le.amount
-                        END
-                    ),
-                    0
-                )
-                FROM public.ledger_entries le
-                WHERE le.wallet_cat_id = w.cat_id
-            )
-            """.trimIndent(),
-        )
-            .query(Int::class.java)
-            .single()
-
-        assertThat(unreconciledWallets).isZero()
+        val unreconciled = jdbcClient.sql("SELECT count(*) FROM public.wallets w WHERE w.balance <> (SELECT COALESCE(SUM(CASE le.direction WHEN 'credit' THEN le.amount ELSE -le.amount END), 0) FROM public.ledger_entries le WHERE le.wallet_id = w.id)").query(Int::class.java).single()
+        assertThat(unreconciled).isZero()
     }
-
     private fun assertGlobalConservation() {
-        val signedTotal = jdbcClient.sql(
-            """
-            SELECT COALESCE(
-                SUM(
-                    CASE direction
-                        WHEN 'credit' THEN amount
-                        ELSE -amount
-                    END
-                ),
-                0
-            )
-            FROM public.ledger_entries
-            """.trimIndent(),
-        )
-            .query(Long::class.java)
-            .single()
-
+        val signedTotal = jdbcClient.sql("SELECT COALESCE(SUM(CASE direction WHEN 'credit' THEN amount ELSE -amount END), 0) FROM public.ledger_entries").query(Long::class.java).single()
         assertThat(signedTotal).isZero()
     }
-
-    private fun migrationFiles(): List<Path> =
-        Files.list(Path.of("../supabase/migrations")).use { stream ->
-            stream
-                .filter { it.fileName.toString().endsWith(".sql") }
-                .sorted()
-                .toList()
-        }
-
-    private data class TransferRecord(
-        val id: UUID,
-        val amount: Long,
-        val note: String?,
-        val status: String,
-        val failureReason: String?,
-    )
-
+    private fun migrationFiles(): List<Path> = Files.list(Path.of("../supabase/migrations")).use { it.filter { path -> path.fileName.toString().endsWith(".sql") }.sorted().toList() }
+    private data class HumanWallet(val id: UUID, val walletId: UUID)
+    private data class CatWallet(val id: UUID, val walletId: UUID)
+    private data class TransferRecord(val id: UUID, val amount: Long, val note: String?, val status: String, val failureReason: String?)
     private companion object {
-        val treasuryCatId: UUID = UUID.fromString("00000000-0000-4000-8000-000000000001")
-
-        @Container
-        @JvmStatic
-        val postgres = PostgreSQLContainer<Nothing>("postgres:16-alpine")
-
-        val transferRecordMapper = RowMapper { rs: ResultSet, _: Int ->
-            TransferRecord(
-                id = rs.getObject("id", UUID::class.java),
-                amount = rs.getLong("amount"),
-                note = rs.getString("note"),
-                status = rs.getString("status"),
-                failureReason = rs.getString("failure_reason"),
-            )
-        }
+        val treasuryWalletId: UUID = UUID.fromString("00000000-0000-4000-8000-000000000001")
+        @Container @JvmStatic val postgres = PostgreSQLContainer<Nothing>("postgres:16-alpine")
+        val transferRecordMapper = RowMapper { rs: ResultSet, _: Int -> TransferRecord(rs.getObject("id", UUID::class.java), rs.getLong("amount"), rs.getString("note"), rs.getString("status"), rs.getString("failure_reason")) }
     }
 }

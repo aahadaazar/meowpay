@@ -20,9 +20,10 @@ class CatService(
     fun me(humanId: UUID): MeResponse {
         val human = jdbcClient.sql(
             """
-            SELECT id, email, display_name
-            FROM public.humans
-            WHERE id = :humanId
+            SELECT h.id, h.email, h.display_name, w.id AS wallet_id, w.balance
+            FROM public.humans h
+            JOIN public.wallets w ON w.human_id = h.id AND w.kind = 'human'
+            WHERE h.id = :humanId
             """.trimIndent(),
         )
             .param("humanId", humanId)
@@ -34,11 +35,10 @@ class CatService(
 
         val cats = jdbcClient.sql(
             """
-            SELECT c.id, c.name, w.balance, c.created_at
+            SELECT c.id, w.id AS wallet_id, c.name, w.balance, c.created_at
             FROM public.cats c
             JOIN public.wallets w ON w.cat_id = c.id
             WHERE c.human_id = :humanId
-              AND NOT c.is_system
             ORDER BY c.created_at ASC
             """.trimIndent(),
         )
@@ -46,16 +46,16 @@ class CatService(
             .query(catSummaryMapper)
             .list()
 
-        return MeResponse(human.id, human.email, human.displayName, cats)
+        return MeResponse(human.id, human.email, human.displayName, human.walletId, human.balance, cats)
     }
 
     fun roster(): List<CatRosterResponse> =
         jdbcClient.sql(
             """
-            SELECT id, name
-            FROM public.cats
-            WHERE NOT is_system
-            ORDER BY name ASC, id ASC
+            SELECT c.id, w.id AS wallet_id, c.name
+            FROM public.cats c
+            JOIN public.wallets w ON w.cat_id = c.id AND w.kind = 'cat'
+            ORDER BY c.name ASC, c.id ASC
             """.trimIndent(),
         )
             .query(catRosterMapper)
@@ -83,7 +83,7 @@ class CatService(
 
         return jdbcClient.sql(
             """
-            SELECT c.id, c.name, w.balance, c.created_at
+            SELECT c.id, w.id AS wallet_id, c.name, w.balance, c.created_at
             FROM public.cats c
             JOIN public.wallets w ON w.cat_id = c.id
             WHERE c.id = :catId
@@ -98,6 +98,8 @@ class CatService(
         val id: UUID,
         val email: String?,
         val displayName: String,
+        val walletId: UUID,
+        val balance: Long,
     )
 
     private companion object {
@@ -106,12 +108,15 @@ class CatService(
                 id = rs.getObject("id", UUID::class.java),
                 email = rs.getString("email"),
                 displayName = rs.getString("display_name"),
+                walletId = rs.getObject("wallet_id", UUID::class.java),
+                balance = rs.getLong("balance"),
             )
         }
 
         val catSummaryMapper = RowMapper { rs: ResultSet, _: Int ->
             CatSummaryResponse(
                 id = rs.getObject("id", UUID::class.java),
+                walletId = rs.getObject("wallet_id", UUID::class.java),
                 name = rs.getString("name"),
                 balance = rs.getLong("balance"),
                 createdAt = rs.getObject("created_at", OffsetDateTime::class.java),
@@ -121,6 +126,7 @@ class CatService(
         val catRosterMapper = RowMapper { rs: ResultSet, _: Int ->
             CatRosterResponse(
                 id = rs.getObject("id", UUID::class.java),
+                walletId = rs.getObject("wallet_id", UUID::class.java),
                 name = rs.getString("name"),
             )
         }

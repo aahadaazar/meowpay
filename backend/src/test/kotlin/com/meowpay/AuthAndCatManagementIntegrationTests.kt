@@ -91,7 +91,7 @@ class AuthAndCatManagementIntegrationTests {
     }
 
     @Test
-    fun `me contains only the authenticated humans cats and welcome balances`() {
+    fun `me contains the authenticated human wallet and empty cat wallets`() {
         val alice = createAuthUser("alice@example.test", "Alice")
         val bob = createAuthUser("bob@example.test", "Bob")
         catService.create(alice, CreateCatRequest("Milo"))
@@ -100,14 +100,17 @@ class AuthAndCatManagementIntegrationTests {
         val me = catService.me(alice)
 
         assertThat(me.displayName).isEqualTo("Alice")
+        assertThat(me.balance).isZero()
+        assertThat(me.walletId).isNotNull()
         assertThat(me.cats).hasSize(1)
         val cat = me.cats.first()
         assertThat(cat.name).isEqualTo("Milo")
-        assertThat(cat.balance).isEqualTo(500)
+        assertThat(cat.balance).isZero()
+        assertThat(cat.walletId).isNotNull()
     }
 
     @Test
-    fun `global roster excludes the treasury`() {
+    fun `global roster contains cats and never represents the treasury as a cat`() {
         val alice = createAuthUser("alice@example.test", "Alice")
         val bob = createAuthUser("bob@example.test", "Bob")
         catService.create(alice, CreateCatRequest("Milo"))
@@ -125,14 +128,16 @@ class AuthAndCatManagementIntegrationTests {
         val aliceCat = catService.create(alice, CreateCatRequest("Milo"))
         val bobCat = catService.create(bob, CreateCatRequest("Nori"))
 
-        assertThat(queryAsAuthenticated(alice, "SELECT count(*) FROM public.wallets WHERE cat_id = '${bobCat.id}'"))
+        assertThat(queryAsAuthenticated(alice, "SELECT count(*) FROM public.wallets WHERE id = '${bobCat.walletId}'"))
             .isZero()
-        assertThat(queryAsAuthenticated(alice, "SELECT count(*) FROM public.ledger_entries WHERE wallet_cat_id = '${bobCat.id}'"))
+        assertThat(queryAsAuthenticated(alice, "SELECT count(*) FROM public.ledger_entries WHERE wallet_id = '${bobCat.walletId}'"))
             .isZero()
-        assertThat(queryAsAuthenticated(alice, "SELECT count(*) FROM public.transfers WHERE sender_cat_id = '${bobCat.id}'"))
+        assertThat(queryAsAuthenticated(alice, "SELECT count(*) FROM public.transfers WHERE sender_wallet_id = '${bobCat.walletId}'"))
             .isZero()
-        assertThat(queryAsAuthenticated(alice, "SELECT count(*) FROM public.wallets WHERE cat_id = '${aliceCat.id}'"))
+        assertThat(queryAsAuthenticated(alice, "SELECT count(*) FROM public.wallets WHERE id = '${aliceCat.walletId}'"))
             .isEqualTo(1)
+        assertThat(queryAsAuthenticated(alice, "SELECT count(*) FROM public.wallets WHERE kind = 'treasury'"))
+            .isZero()
     }
 
     @Test

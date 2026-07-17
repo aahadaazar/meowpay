@@ -10,61 +10,47 @@ import java.util.UUID
 class OwnershipGuard(
     private val jdbcClient: JdbcClient,
 ) {
-    fun requireOwnedSender(humanId: UUID, senderCatId: UUID) {
-        requireOwnedCat(
-            humanId = humanId,
-            catId = senderCatId,
-            code = "sender_not_owned",
-            message = "senderCatId is not owned by the authenticated human.",
-        )
-    }
-
-    fun requireOwnedCat(
-        humanId: UUID,
-        catId: UUID,
-        code: String = "cat_not_owned",
-        message: String = "catId is not owned by the authenticated human.",
-    ) {
-        val ownsCat = jdbcClient.sql(
+    fun requireOwnedSender(humanId: UUID, walletId: UUID) {
+        val ownsWallet = jdbcClient.sql(
             """
             SELECT EXISTS (
                 SELECT 1
-                FROM public.cats
-                WHERE id = :catId
-                  AND human_id = :humanId
-                  AND NOT is_system
+                FROM public.wallets w
+                LEFT JOIN public.cats c ON c.id = w.cat_id
+                WHERE w.id = :walletId
+                  AND (w.human_id = :humanId OR c.human_id = :humanId)
             )
             """.trimIndent(),
         )
-            .param("catId", catId)
+            .param("walletId", walletId)
             .param("humanId", humanId)
             .query(Boolean::class.java)
             .single()
 
-        if (!ownsCat) {
-            throw ForbiddenException(code, message)
+        if (!ownsWallet) {
+            throw ForbiddenException("sender_not_owned", "senderWalletId is not owned by the authenticated human.")
         }
     }
 
-    fun requireNonSystemRecipient(receiverCatId: UUID) {
-        val nonSystemRecipient = jdbcClient.sql(
+    fun requireCatRecipient(receiverWalletId: UUID) {
+        val catRecipient = jdbcClient.sql(
             """
             SELECT EXISTS (
                 SELECT 1
-                FROM public.cats
-                WHERE id = :catId
-                  AND NOT is_system
+                FROM public.wallets
+                WHERE id = :walletId
+                  AND kind = 'cat'
             )
             """.trimIndent(),
         )
-            .param("catId", receiverCatId)
+            .param("walletId", receiverWalletId)
             .query(Boolean::class.java)
             .single()
 
-        if (!nonSystemRecipient) {
+        if (!catRecipient) {
             throw BadRequestException(
                 "invalid_receiver",
-                "receiverCatId must identify a non-system cat.",
+                "receiverWalletId must identify a cat wallet.",
             )
         }
     }

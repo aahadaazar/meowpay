@@ -18,18 +18,18 @@ class TransferControllerTests {
     private val controller = TransferController(transferService)
 
     @Test
-    fun `execute endpoint rejects a sender cat the JWT human does not own`() {
+    fun `execute endpoint rejects a sender wallet the JWT human does not own`() {
         val humanId = UUID.randomUUID()
         val request = ExecuteTransferRequest(
             idempotencyKey = UUID.randomUUID(),
-            senderCatId = UUID.randomUUID(),
-            receiverCatId = UUID.randomUUID(),
+            senderWalletId = UUID.randomUUID(),
+            receiverWalletId = UUID.randomUUID(),
             amount = 10,
             note = "A snack",
         )
         val forbidden = ForbiddenException(
             "sender_not_owned",
-            "senderCatId is not owned by the authenticated human.",
+            "senderWalletId is not owned by the authenticated human.",
         )
         doThrow(forbidden).`when`(transferService).execute(humanId, request)
 
