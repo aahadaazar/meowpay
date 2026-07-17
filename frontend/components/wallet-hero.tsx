@@ -45,7 +45,7 @@ export function WalletHero({ balance, entries, walletId, onTopUp }: { balance: n
     <div className="grid gap-6 lg:grid-cols-[1fr_260px] lg:items-end">
       <div>
         <p className="text-caption-uppercase uppercase">What you hold</p>
-        <p className="mt-2 text-display-lg">{balance.toLocaleString()} treats</p>
+        <p className="mt-2 text-display-lg" data-testid="wallet-balance">{balance.toLocaleString()} treats</p>
         <p className="mt-3 text-body-md">MeowPay Bank · ···· 4242</p>
         <svg aria-label="Your wallet movement sparkline" className="mt-6 h-16 w-full max-w-md" viewBox="0 0 100 32" preserveAspectRatio="none" role="img"><polyline fill="none" points={sparklinePoints(walletEntries)} stroke="currentColor" strokeLinecap="round" strokeWidth="2" vectorEffect="non-scaling-stroke" /></svg>
       </div>

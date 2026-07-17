@@ -31,7 +31,7 @@ export function NewCatDialog({ isOpen, isSubmitting = false, onClose, onCreate }
     <div aria-modal="true" className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" role="dialog">
       <form className="w-full max-w-[420px] rounded-lg border border-border bg-surface-card p-6 dark:bg-card" onSubmit={handleSubmit}>
         <h2 className="text-title-lg">Create a cat wallet</h2>
-        <p className="mt-2 text-body-md text-body">Every new cat starts with 500 welcome treats.</p>
+        <p className="mt-2 text-body-md text-body">New cats start at zero. Fund yours from your wallet once it exists.</p>
         <label className="mt-6 block text-title-sm font-semibold" htmlFor="cat-name">
           Cat name
         </label>

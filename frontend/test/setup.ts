@@ -10,6 +10,10 @@ vi.mock("next/font/google", () => ({
 }));
 
 if (typeof window !== "undefined") {
+  // jsdom implements no layout, so it ships no scrollIntoView; the cat card's "Send treats"
+  // prefill calls it on the composer heading.
+  Element.prototype.scrollIntoView = vi.fn();
+
   Object.defineProperty(window, "matchMedia", {
     writable: true,
     value: vi.fn().mockImplementation((query: string) => ({

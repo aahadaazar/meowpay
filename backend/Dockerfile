@@ -21,6 +21,7 @@ COPY backend/docker-entrypoint.sh /usr/local/bin/meowpay-backend
 RUN chmod +x /usr/local/bin/meowpay-backend
 
 COPY backend/src ./src
+COPY backend/scripts ./scripts
 COPY supabase/migrations /opt/meowpay/migrations
 
 EXPOSE 8080

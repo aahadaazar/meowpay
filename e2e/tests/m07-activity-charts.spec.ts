@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { loginAsFixedHuman, loginAsNewHuman } from "../fixtures/auth";
-import { confirmSend, createCat, fillManualTransferForm, gotoDashboard, toast, topUp } from "../fixtures/dashboard-page";
+import { confirmSend, createCat, fillManualTransferForm, fundCatFromWallet, gotoDashboard, toast, topUp, walletHeroAmount } from "../fixtures/dashboard-page";
 import { uniqueCatName } from "../fixtures/ids";
 
 // M7 — Activity charts (docs/milestones/M07-activity-charts.md)
@@ -10,10 +10,16 @@ import { uniqueCatName } from "../fixtures/ids";
 // visual/responsive verify step the milestone doc calls out (375/768/1440, see
 // m01-m07-visual.spec.ts for the screenshot pass).
 
-test("top recipients stays empty until the first sent treat, even though the flow chart already has the welcome grant", async ({ context, page }) => {
+test("top recipients stays empty until the first sent treat, even though the flow chart already has the top-up", async ({ context, page }) => {
+  // M12 removed the welcome grant, so a top-up is now the only thing that can put a credit in the
+  // flow chart before anything has been *sent*. That asymmetry is the point of this test: the
+  // treasury is invisible, so a top-up shows only its credit leg and reads as external activity,
+  // while top recipients tallies debit legs and so stays empty (ADR 0015, ADR 0023).
   await loginAsNewHuman(context, "Chart Empty Human");
   await gotoDashboard(page);
   await createCat(page, uniqueCatName("Chart-Cat"));
+  await topUp(page, 500);
+  await expect.poll(() => walletHeroAmount(page), { timeout: 10_000 }).toBe(500);
 
   await expect(page.getByRole("heading", { name: "What entered and left" })).toBeVisible();
   await expect(page.getByLabel("Treats sent by recipient")).toHaveCount(0);
@@ -28,6 +34,9 @@ test("sending treats populates the top recipients chart, and hovering shows its 
   const receiver = uniqueCatName("Chart-Receiver");
   await createCat(page, sender);
   await createCat(page, receiver);
+  // M12: cats are born at 0, so the sender has to be funded from the wallet before it can send.
+  await topUp(page, 500);
+  await fundCatFromWallet(page, sender, 100);
   await fillManualTransferForm(page, { senderName: sender, receiverCatName: receiver, amount: 60 });
   await confirmSend(page);
   await expect(toast(page, "Treats sent.")).toBeVisible();
@@ -49,18 +58,21 @@ test("an internal own-cat transfer nets to zero in the flow chart, but its recip
   const catB = uniqueCatName("Internal-B");
   await createCat(page, catA);
   await createCat(page, catB);
+  await topUp(page, 500);
+  await fundCatFromWallet(page, catA, 100);
   await fillManualTransferForm(page, { senderName: catA, receiverCatName: catB, amount: 90 });
   await confirmSend(page);
   await expect(toast(page, "Treats sent.")).toBeVisible();
 
   await expect(page.getByRole("button", { name: `${catB}, 90 treats sent` })).toBeVisible();
 
-  // Both legs of the internal transfer are skipped entirely by derive.ts's flow bucketing, so
-  // today's bar shows only the two welcome grants: 500 + 500 = 1000 credits, 0 debits.
+  // Neither internal transfer reaches the flow chart: wallet→catA and catA→catB each show this
+  // human both legs, so derive.ts nets them out. The top-up is the only external movement — the
+  // treasury is invisible, so only its credit leg lands. Today's bar is exactly the top-up.
   const tooltip = page.locator("#treat-flow-tooltip");
-  const bar = page.locator('rect[role="button"][aria-label*="1000 credits and 0 debits"]');
+  const bar = page.locator('rect[role="button"][aria-label*="500 credits and 0 debits"]');
   await bar.hover();
-  await expect(tooltip).toContainText("1,000 credits");
+  await expect(tooltip).toContainText("500 credits");
   await expect(tooltip).toContainText("0 debits");
 });
 
@@ -72,6 +84,7 @@ test("both charts render and reflow from a 2-up grid to a single column below 76
   await createCat(page, sender);
   await createCat(page, receiver);
   await topUp(page, 500);
+  await fundCatFromWallet(page, sender, 100);
   await fillManualTransferForm(page, { senderName: sender, receiverCatName: receiver, amount: 30 });
   await confirmSend(page);
   await expect(toast(page, "Treats sent.")).toBeVisible();

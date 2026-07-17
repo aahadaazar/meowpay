@@ -6,7 +6,8 @@ import { uniqueCatName, uniqueEmail } from "../fixtures/ids";
 
 // M3 — Auth & cat management (docs/milestones/M03-auth-and-cat-management.md)
 // ADRs: 0011 (auth boundary), 0012 (RLS ownership subquery)
-// Verify: one human creates two cats; both appear on the dashboard with 500 treats each.
+// Verify: one human creates two cats; both appear on the dashboard. M12 (ADR 0023) removed the
+// welcome grant, so a new cat starts at 0 and is funded from its human's wallet instead.
 // (Unauthenticated redirect-to-/login is covered by m00-foundation.spec.ts.)
 
 const TEST_PASSWORD = "correct-horse-battery";
@@ -91,10 +92,10 @@ test.describe("cat management", () => {
     await dialog.waitFor({ state: "hidden" });
 
     await expect(catCard(page, catName)).toBeVisible();
-    expect(await catBalance(page, catName)).toBe(500);
+    expect(await catBalance(page, catName)).toBe(0);
   });
 
-  test("a second cat also receives its 500-treat welcome grant", async ({ context, page }) => {
+  test("a second cat also starts empty, with no welcome grant", async ({ context, page }) => {
     // Reused account: only checks each cat's own balance by name, unaffected by its history.
     await loginAsFixedHuman(context, "A");
     await gotoDashboard(page);
@@ -106,8 +107,8 @@ test.describe("cat management", () => {
 
     await expect(catCard(page, catA)).toBeVisible();
     await expect(catCard(page, catB)).toBeVisible();
-    expect(await catBalance(page, catA)).toBe(500);
-    expect(await catBalance(page, catB)).toBe(500);
+    expect(await catBalance(page, catA)).toBe(0);
+    expect(await catBalance(page, catB)).toBe(0);
   });
 
   test("one human's cats and balances never appear on another human's dashboard", async ({ browser }) => {
@@ -134,7 +135,7 @@ test.describe("cat management", () => {
     // transfer can be addressed to it — that's the deliberate exception, not a leak.
     const catB = uniqueCatName("B-cat");
     await createCat(pageB, catB);
-    await expect(pageB.locator("#receiver-cat option", { hasText: catA })).toHaveCount(1);
+    await expect(pageB.locator("#receiver-wallet option", { hasText: catA })).toHaveCount(1);
 
     await contextA.close();
     await contextB.close();

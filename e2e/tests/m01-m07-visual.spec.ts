@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { loginAsNewHuman } from "../fixtures/auth";
 import { baseURL } from "../fixtures/config";
-import { createCat, fillManualTransferForm, confirmSend, gotoDashboard, isDarkMode, toast, toggleTheme } from "../fixtures/dashboard-page";
+import { createCat, fillManualTransferForm, confirmSend, fundCatFromWallet, gotoDashboard, isDarkMode, toast, toggleTheme, topUp } from "../fixtures/dashboard-page";
 import { uniqueCatName } from "../fixtures/ids";
 
 // M1 — Design system (docs/milestones/M01-design-system.md)
@@ -64,6 +64,8 @@ test.describe("M1/M7 dashboard visual pass", () => {
     await gotoDashboard(page);
     await createCat(page, catA);
     await createCat(page, catB);
+    await topUp(page, 100);
+    await fundCatFromWallet(page, catA, 50);
     await fillManualTransferForm(page, { senderName: catA, receiverCatName: catB, amount: 50, note: "visual pass fixture" });
     await confirmSend(page);
     await expect(toast(page, "Treats sent.")).toBeVisible();

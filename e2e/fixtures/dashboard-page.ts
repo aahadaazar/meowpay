@@ -19,8 +19,10 @@ export async function catBalance(page: Page, catName: string): Promise<number> {
   return Number(digits);
 }
 
+/** The wallet hero holds both the balance and the top-up form, so any text match loose enough to
+ * find "700 treats" also finds the "Add treats" label/button. Key on the balance's own testid. */
 export async function walletHeroAmount(page: Page): Promise<number> {
-  const text = await page.getByRole("region", { name: "Your wallet" }).getByText(/treats$/).innerText();
+  const text = await page.getByTestId("wallet-balance").innerText();
   const digits = text.replace(/[^0-9]/g, "");
   return Number(digits);
 }
@@ -56,6 +58,15 @@ export async function fillManualTransferForm(page: Page, input: TransferFormInpu
   await section.locator("#transfer-amount").fill(String(input.amount));
   if (input.note) await section.locator("#transfer-note").fill(input.note);
   await section.getByRole("button", { name: "Review transfer" }).click();
+}
+
+/** M12's funding path: treats reach a cat only by being sent from its human's wallet, so any test
+ * that needs a cat with a balance has to walk `top up → fund` first (ADR 0023). Assumes the wallet
+ * already holds `amount`. */
+export async function fundCatFromWallet(page: Page, catName: string, amount: number) {
+  await fillManualTransferForm(page, { senderName: "Your wallet", receiverCatName: catName, amount });
+  await confirmSend(page);
+  await toast(page, "Treats sent.").waitFor();
 }
 
 export function confirmTransferDialog(page: Page): Locator {

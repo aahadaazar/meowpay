@@ -15,7 +15,7 @@ test.describe("M0 foundation", () => {
     await page.goto("/");
     // No session yet, so middleware (updateSession) redirects the root shell to /login.
     await expect(page).toHaveURL(/\/login(\?|$)/);
-    await expect(page.getByRole("heading", { name: "Welcome to MeowPay" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Welcome back to MeowPay" })).toBeVisible();
   });
 
   test("visiting a protected route while unauthenticated redirects to /login", async ({ page }) => {
