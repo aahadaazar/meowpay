@@ -1,0 +1,27 @@
+.git
+.github
+
+# Dependency and build caches
+node_modules
+frontend/node_modules
+frontend/.next
+frontend/out
+backend/.gradle
+backend/build
+backend/out
+backend/tmp
+
+# Environment files stay on the host via compose env_file
+.env
+.env.*
+
+# Test and local artifacts
+coverage
+playwright-report
+test-results
+blob-report
+.playwright
+e2e/.playwright
+tmp
+temp
+*.log
