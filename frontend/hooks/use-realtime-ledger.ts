@@ -36,7 +36,7 @@ export function useRealtimeLedger(onLedgerChange: (payload: LedgerPayload) => vo
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "ledger_entries" },
-          (payload) => callbackRef.current(payload as LedgerPayload),
+          (payload) => callbackRef.current(payload as unknown as LedgerPayload),
         )
         .subscribe((status) => {
           if (status !== "SUBSCRIBED") return;

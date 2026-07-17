@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useState } from "react";
 import { CatCard } from "@/components/cat-card";
 import { ActivityCharts } from "@/components/charts/activity-charts";
@@ -47,6 +48,7 @@ export function applyLedgerChange(entries: LedgerEntry[], payload: { eventType: 
 }
 
 export function RealtimeDashboard({ displayName, initialCats, initialEntries, initialRecipientCats }: RealtimeDashboardProps) {
+  const router = useRouter();
   const [cats, setCats] = useState(initialCats);
   const [entries, setEntries] = useState(() => sortLedgerEntries(initialEntries));
   const [recipientCats, setRecipientCats] = useState(initialRecipientCats);
@@ -88,8 +90,14 @@ export function RealtimeDashboard({ displayName, initialCats, initialEntries, in
     return topUp(session.access_token, input);
   }
 
+  async function signOut() {
+    await createClient().auth.signOut();
+    router.push("/login");
+    router.refresh();
+  }
+
   return <main className="min-h-screen bg-background text-foreground">
-    <header className="border-b border-border"><div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"><a className="text-title-md font-semibold" href="/dashboard">MeowPay</a><div className="flex items-center gap-3"><span className="hidden text-body-sm text-muted-foreground sm:inline">{displayName}</span><ThemeToggle /></div></div></header>
+    <header className="border-b border-border"><div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8"><a className="text-title-md font-semibold" href="/dashboard">MeowPay</a><div className="flex items-center gap-3"><span className="hidden text-body-sm text-muted-foreground sm:inline">{displayName}</span><ThemeToggle /><button className="h-9 rounded-md border border-input px-3 text-body-sm hover:border-foreground" onClick={signOut} type="button">Sign out</button></div></div></header>
     <div className="mx-auto grid w-full max-w-7xl gap-section px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"><div><p className="text-caption-uppercase uppercase text-muted-foreground">Your cat wallets</p><h1 className="mt-2 text-display-sm">A treat account for every cat</h1></div><button className="button-primary" onClick={() => setIsDialogOpen(true)} type="button">New cat</button></div>
       {error ? <p className="text-body-sm text-destructive" role="alert">{error}</p> : null}

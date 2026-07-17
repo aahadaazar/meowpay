@@ -8,23 +8,29 @@
 The first fullstack slice: a human can log in and create cats, each funded by the welcome
 grant.
 
-- **Auth:** Supabase magic-link, entirely frontend-side —
-  `signInWithOtp({ options: { data: { display_name } } })` carries the human's display name.
-  `auth/callback` exchanges the code for a session. `middleware.ts` gates on **`getUser()`**
-  (revalidates against the Auth server), not `getSession()` ([0011](../adr/0011-auth-boundary.md)).
+- **Auth:** Supabase email + password, entirely frontend-side — `signUp({ email, password,
+  options: { data: { display_name } } })` on `/signup`, `signInWithPassword({ email, password })`
+  on `/login`. Both return a session directly, so a fresh signup lands the human on the dashboard
+  with no email step (originally magic-link; replaced 2026-07-17, see
+  [0011](../adr/0011-auth-boundary.md) "Why magic-link was dropped"). `middleware.ts` gates on
+  **`getUser()`** (revalidates against the Auth server), not `getSession()`. A sign-out button on
+  the dashboard header calls `auth.signOut()`.
 - **Migrations:** `0005_rls_policies.sql` (RLS on `cats`/`wallets`/`ledger_entries`/`transfers`,
   ownership-subquery — [0012](../adr/0012-rls-ownership-subquery.md)); `0006_new_user_trigger.sql`
-  (`auth.users` → `humans` row).
+  (`auth.users` → `humans` row) — unchanged by the auth-method swap; it fires on any `auth.users`
+  insert regardless of method.
 - **Backend:** `GET /api/me` (human + cats + balances), `GET /api/cats` (global roster, excludes
   the treasury), `POST /api/cats { name }` → `create_cat`.
-- **Frontend:** login page, empty state ("Create your first cat"), "New cat" dialog.
+- **Frontend:** login page, signup page, sign-out, empty state ("Create your first cat"), "New
+  cat" dialog.
 
 ## Tests
 
 - **Backend:** `/me` returns only the caller's own cats; the roster excludes the treasury; RLS
   blocks cross-human reads; a new cat's welcome grant reconciles.
-- **Frontend:** login form validation; unauthenticated access redirects to `/login`; the empty
-  state offers cat creation.
+- **Frontend:** signup/login form validation; a duplicate-email signup is rejected (both the
+  direct-error and the anti-enumeration no-identities shapes); unauthenticated access redirects
+  to `/login`; the empty state offers cat creation.
 
 ## Verify
 
@@ -59,3 +65,18 @@ One human creates two cats; both appear on the dashboard with 500 treats each.
   and `cat-management-dashboard.test.tsx` pass, alongside the rest of the 24-test frontend suite —
   see [CHECKLIST.md](CHECKLIST.md). The UI dashboard walkthrough still needs a running app + live
   Supabase + a browser, which remains unavailable in this environment.
+- 2026-07-17 — **auth method swapped: magic-link → email + password signup/login.** User-driven
+  change, not a defect fix — see [0011](../adr/0011-auth-boundary.md) "Why magic-link was
+  dropped" for the rationale (no password to demo with; the login e2e test's magic-link send
+  timed out and was never root-caused). `login-form.tsx` rewritten for `signInWithPassword`; new
+  `signup-form.tsx`/`/signup` page for `signUp`; sign-out button added to the dashboard header
+  (nothing called `signOut()` before, so `/login` was unreachable once authenticated);
+  `/auth/callback` deleted (no code to exchange — password auth returns a session directly).
+  `0006_new_user_trigger.sql` needed **no change** — confirmed it fires on any `auth.users`
+  insert, not specifically on magic-link signup. Frontend suite re-run: 40 tests, 0 failures (was
+  24 — new signup-form tests, expanded login-form and middleware coverage for the new flow and
+  the `/signup` route). Backend suite re-run unchanged, confirming nothing crossed the ADR 0011
+  resource-server boundary. Requires a manual Supabase Dashboard setting ("Confirm email" → OFF)
+  — flagged under M10 fresh-clone reproducibility in [CHECKLIST.md](CHECKLIST.md). Live-app
+  verify (signup → dashboard → sign out → log back in → duplicate-email rejection) and the
+  e2e/visual runs are not yet executed — no running stack this session; see CHECKLIST.md.

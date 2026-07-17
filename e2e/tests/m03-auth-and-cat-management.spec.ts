@@ -9,28 +9,70 @@ import { uniqueCatName, uniqueEmail } from "../fixtures/ids";
 // Verify: one human creates two cats; both appear on the dashboard with 500 treats each.
 // (Unauthenticated redirect-to-/login is covered by m00-foundation.spec.ts.)
 
-test.describe("login form", () => {
-  test("rejects an invalid email", async ({ page }) => {
-    await page.goto("/login");
+const TEST_PASSWORD = "correct-horse-battery";
+
+test.describe("signup and login forms", () => {
+  test("rejects an invalid email on signup", async ({ page }) => {
+    await page.goto("/signup");
     await page.locator("#email").fill("not-an-email");
     await page.locator("#display-name").fill("Alice");
-    await page.getByRole("button", { name: "Send magic link" }).click();
+    await page.locator("#password").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Create account" }).click();
     await expect(page.getByRole("alert").filter({ hasText: "Enter a valid email address." })).toBeVisible();
   });
 
-  test("requires a display name", async ({ page }) => {
-    await page.goto("/login");
+  test("requires a display name on signup", async ({ page }) => {
+    await page.goto("/signup");
     await page.locator("#email").fill(uniqueEmail("blank-name"));
-    await page.getByRole("button", { name: "Send magic link" }).click();
+    await page.locator("#password").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Create account" }).click();
     await expect(page.getByRole("alert").filter({ hasText: "Tell us your display name." })).toBeVisible();
   });
 
-  test("a valid submission sends the magic link and shows the check-your-email notice", async ({ page }) => {
+  test("rejects a short password on signup", async ({ page }) => {
+    await page.goto("/signup");
+    await page.locator("#email").fill(uniqueEmail("short-password"));
+    await page.locator("#display-name").fill("Alice");
+    await page.locator("#password").fill("short");
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "at least 6 characters" })).toBeVisible();
+  });
+
+  test("requires a password on login", async ({ page }) => {
     await page.goto("/login");
-    await page.locator("#email").fill(uniqueEmail("real-login"));
+    await page.locator("#email").fill(uniqueEmail("blank-password"));
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "Enter your password." })).toBeVisible();
+  });
+
+  test("signs up straight onto the dashboard, survives sign-out/login, and rejects a repeat signup", async ({ page }) => {
+    const email = uniqueEmail("real-signup");
+
+    await page.goto("/signup");
+    await page.locator("#email").fill(email);
     await page.locator("#display-name").fill("Alice Example");
-    await page.getByRole("button", { name: "Send magic link" }).click();
-    await expect(page.getByRole("status")).toHaveText("Check your email for your secure sign-in link.");
+    await page.locator("#password").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Create account" }).click();
+    // No inbox step: signUp returns a session directly (Supabase "Confirm email" is off).
+    await expect(page.getByRole("heading", { name: "Create your first cat" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page).toHaveURL(/\/login$/);
+
+    await page.locator("#email").fill(email);
+    await page.locator("#password").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Log in" }).click();
+    await expect(page.getByRole("heading", { name: "Create your first cat" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Sign out" }).click();
+    await expect(page).toHaveURL(/\/login$/);
+
+    await page.goto("/signup");
+    await page.locator("#email").fill(email);
+    await page.locator("#display-name").fill("Alice Example");
+    await page.locator("#password").fill(TEST_PASSWORD);
+    await page.getByRole("button", { name: "Create account" }).click();
+    await expect(page.getByRole("alert").filter({ hasText: "That email is already registered." })).toBeVisible();
   });
 });
 

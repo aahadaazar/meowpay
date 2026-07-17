@@ -34,7 +34,7 @@ export function useRealtimeWallets(onWalletChange: (wallet: WalletRealtimeRow) =
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "wallets" },
-          (payload) => callbackRef.current((payload as WalletPayload).new),
+          (payload) => callbackRef.current((payload as unknown as WalletPayload).new),
         )
         .subscribe();
     })();

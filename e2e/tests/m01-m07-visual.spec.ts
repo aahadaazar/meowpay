@@ -39,6 +39,13 @@ test.describe("M1 theme system", () => {
         if (theme === "dark") await toggleTheme(page);
         await expect(page).toHaveScreenshot(`login-${theme}-${bp.name}.png`, { fullPage: true });
       });
+
+      test(`signup page renders correctly — ${theme}, ${bp.name}`, async ({ page }) => {
+        await page.setViewportSize({ width: bp.width, height: bp.height });
+        await page.goto("/signup");
+        if (theme === "dark") await toggleTheme(page);
+        await expect(page).toHaveScreenshot(`signup-${theme}-${bp.name}.png`, { fullPage: true });
+      });
     }
   }
 });

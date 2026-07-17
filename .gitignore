@@ -36,6 +36,7 @@ out/
 coverage/
 .next/
 .nuxt/
+*.tsbuildinfo
 
 # Logs
 logs/

@@ -1,8 +1,7 @@
-import { Suspense } from "react";
-import { LoginForm } from "@/components/login-form";
+import { SignupForm } from "@/components/signup-form";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-export default function LoginPage() {
+export default function SignupPage() {
   return (
     <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6">
       <header className="mx-auto flex h-12 w-full max-w-7xl items-center justify-between">
@@ -12,15 +11,13 @@ export default function LoginPage() {
       <section className="mx-auto grid w-full max-w-md gap-6 pt-16 sm:pt-24">
         <div>
           <p className="text-caption-uppercase uppercase text-muted-foreground">Treat money, simply</p>
-          <h1 className="mt-3 text-display-sm">Welcome back to MeowPay</h1>
-          <p className="mt-3 text-body-md text-body">Log in to keep your cats and their treat wallets together.</p>
+          <h1 className="mt-3 text-display-sm">Create your account</h1>
+          <p className="mt-3 text-body-md text-body">One account keeps your cats and their treat wallets together.</p>
         </div>
-        <Suspense>
-          <LoginForm />
-        </Suspense>
+        <SignupForm />
         <p className="text-body-sm text-body">
-          New here?{" "}
-          <a className="font-semibold underline underline-offset-4 hover:text-foreground" href="/signup">Create an account</a>
+          Already have an account?{" "}
+          <a className="font-semibold underline underline-offset-4 hover:text-foreground" href="/login">Log in</a>
         </p>
       </section>
     </main>

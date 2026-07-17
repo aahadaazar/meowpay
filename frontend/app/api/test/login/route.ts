@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { createClient as createSupabaseJsClient } from "@supabase/supabase-js";
 import { createClient as createServerSupabaseClient } from "@/lib/supabase/server";
 
-// Test-only shortcut around magic-link auth (ADR 0011). MeowPay has no password login, and
-// e2e needs multiple independently-authenticated humans without clicking real emails. This
-// mints a genuine Supabase session — same signature, same RLS, same backend JWT verification
-// as a real login — it only skips the "open your inbox" step. 404s unless E2E_TEST_MODE=true;
+// Test-only shortcut (ADR 0011): e2e needs many independently-authenticated humans without
+// driving the signup form for each one. This mints a genuine Supabase session — same signature,
+// same RLS, same backend JWT verification as a real login. 404s unless E2E_TEST_MODE=true;
 // never set that flag outside a test run.
+const TEST_PASSWORD = "e2e-test-password";
+
 export async function POST(request: Request) {
   if (process.env.E2E_TEST_MODE !== "true") {
     return NextResponse.json({ message: "Not found." }, { status: 404 });
@@ -31,6 +32,7 @@ export async function POST(request: Request) {
 
   const { error: createError } = await admin.auth.admin.createUser({
     email,
+    password: TEST_PASSWORD,
     email_confirm: true,
     user_metadata: { display_name: displayName },
   });
@@ -38,23 +40,15 @@ export async function POST(request: Request) {
     return NextResponse.json({ message: createError.message }, { status: 500 });
   }
 
-  const { data: linkData, error: linkError } = await admin.auth.admin.generateLink({
-    type: "magiclink",
-    email,
-  });
-  if (linkError || !linkData) {
-    return NextResponse.json({ message: linkError?.message ?? "Could not generate a test session." }, { status: 500 });
-  }
-
-  // Same exchange the real /auth/callback performs, just via token_hash instead of a PKCE code —
-  // writes the same session cookies through the same @supabase/ssr cookie adapter.
+  // Same call the real login form makes — writes the same session cookies through the same
+  // @supabase/ssr cookie adapter.
   const supabase = createServerSupabaseClient();
-  const { data: sessionData, error: verifyError } = await supabase.auth.verifyOtp({
-    token_hash: linkData.properties.hashed_token,
-    type: "email",
+  const { data: sessionData, error: signInError } = await supabase.auth.signInWithPassword({
+    email,
+    password: TEST_PASSWORD,
   });
-  if (verifyError || !sessionData.session) {
-    return NextResponse.json({ message: verifyError?.message ?? "Could not verify the test session." }, { status: 500 });
+  if (signInError || !sessionData.session) {
+    return NextResponse.json({ message: signInError?.message ?? "Could not create the test session." }, { status: 500 });
   }
 
   return NextResponse.json({

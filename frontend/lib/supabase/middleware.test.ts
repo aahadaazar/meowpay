@@ -22,4 +22,20 @@ describe("updateSession", () => {
 
     expect(response.headers.get("location")).toBe("http://localhost:3000/login?next=%2Fdashboard");
   });
+
+  it.each(["/login", "/signup"])("lets an unauthenticated human reach %s", async (path) => {
+    getUser.mockResolvedValue({ data: { user: null } });
+
+    const response = await updateSession(new NextRequest(`http://localhost:3000${path}`));
+
+    expect(response.headers.get("location")).toBeNull();
+  });
+
+  it.each(["/login", "/signup"])("redirects an authenticated human away from %s", async (path) => {
+    getUser.mockResolvedValue({ data: { user: { id: "human-1" } } });
+
+    const response = await updateSession(new NextRequest(`http://localhost:3000${path}`));
+
+    expect(response.headers.get("location")).toBe("http://localhost:3000/dashboard");
+  });
 });

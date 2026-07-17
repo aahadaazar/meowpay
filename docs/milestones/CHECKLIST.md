@@ -3,8 +3,10 @@
 **8 of 12 complete.** M0–M7 done; M8 abandoned (2026-07-17); M9 deliberately deferred to clear
 testing debt; M10 not started; M11 (added 2026-07-16) implemented then abandoned as out of scope,
 see below.
-**Backend suite green — 17 tests, 0 failures. Frontend suite green — 24 tests, 0 failures**
-(2026-07-16). A live-browser Playwright e2e suite (`e2e/`) now exists and was run against the full
+**Backend suite green — 17 tests, 0 failures. Frontend suite green — 40 tests, 0 failures**
+(2026-07-17, up from 24 on 2026-07-16 — auth swapped from magic-link to email + password, see M3's
+progress log and [0011](../adr/0011-auth-boundary.md)). A live-browser Playwright e2e suite (`e2e/`)
+was run against the full
 docker-compose stack — see "e2e suite run against the live stack" below. It surfaced and fixed a
 real, production-breaking backend auth bug (wrong JWT verification mode) plus two harness bugs. The
 Realtime dashboard crash found in that run is now fixed; the suite still has unrelated failures.
@@ -117,11 +119,18 @@ Everything below had been authored but never compiled or executed, so none of it
 ### Still outstanding
 - [x] **M0 verify (frontend half)** — now covered by `e2e/tests/m00-foundation.spec.ts` (passes):
       unauthenticated `/api/**` → 401, unauthenticated visit → redirect to `/login`.
-- [~] **M3 verify (UI half)** — `e2e/tests/m03-auth-and-cat-management.spec.ts` covers this and
-      mostly passes (login validation, empty state, welcome grants, cross-human isolation); one case
-      ("shows the check-your-email notice") times out — see e2e findings below, not yet root-caused.
+- [~] **M3 verify (UI half)** — `e2e/tests/m03-auth-and-cat-management.spec.ts` covers this
+      (signup/login validation, a fresh signup landing on the dashboard with no email step,
+      sign-out/log-back-in, a repeat signup with the same email rejected, empty state, welcome
+      grants, cross-human isolation) but has not been run since the 2026-07-17 magic-link →
+      password swap (see M03's progress log and [0011](../adr/0011-auth-boundary.md)) — no
+      running stack this session. The flaky "shows the check-your-email notice" case (below) no
+      longer exists; it was retired along with magic-link, not root-caused.
 - [~] **M1/M7 visual pass at 375/768/1440px in both themes** — `e2e/tests/m01-m07-visual.spec.ts`
-      covers this. The login-page pass (6 shots, both themes) is green. The dashboard pass is
+      covers this. The login-page pass (6 shots, both themes) was green under magic-link, but the
+      login page's markup changed (password field replaces display name) and a new `/signup` pass
+      was added (6 more shots) — **baselines need regenerating**
+      (`npx playwright test m01-m07-visual --update-snapshots`), not yet done. The dashboard pass is
       currently blocked by open e2e bug 4 below (its `beforeAll` populates a human with cats/a
       transfer, which hits the realtime crash).
 - [x] **Confirm Supabase JWT signing mode** (HS256 vs JWKS) in project Auth settings — **resolved:
@@ -185,10 +194,13 @@ three bugs blocking the suite entirely, and found one further bug still open.
    payload cannot take down the dashboard. The hook tests now cover the Strict Mode replay and the
    dashboard-state test covers the redacted payload.
 
-**Separately observed, not root-caused:** `m03-auth-and-cat-management.spec.ts`'s "shows the
-check-your-email notice" test times out waiting for the notice after a real `auth.signInWithOtp`
-call. Plausibly Supabase's magic-link rate limit after several back-to-back suite runs against the
-same project rather than a product bug, but not confirmed.
+**Resolved by removal, not diagnosis (2026-07-17):** `m03-auth-and-cat-management.spec.ts`'s
+"shows the check-your-email notice" test used to time out waiting for the notice after a real
+`auth.signInWithOtp` call — plausibly Supabase's magic-link rate limit after several
+back-to-back suite runs against the same project, but never confirmed. Magic-link itself was
+replaced with email + password login ([0011](../adr/0011-auth-boundary.md)), which has no send
+step to time out or rate-limit, so the test (and the code path it covered) no longer exists.
+Honest framing: this is the flow being removed, not the bug being found.
 
 **Latest run (2026-07-16):** all 4 M4 Realtime tests pass in the normal 10-worker Playwright run,
 including live grant delivery, responsive trail rendering, and two-human socket isolation. The full
@@ -248,6 +260,25 @@ The brief explicitly checks that *"the repo is public and runs from a fresh clon
       non-reproducible installs from a fresh clone.
 - [ ] **`next@14.2.15` has a published security vulnerability** (npm deprecation warning points to
       the 2025-12-11 Next.js advisory). Worth patching before submission.
+- [ ] **Supabase project setting: "Confirm email" must be OFF** (Dashboard → Authentication →
+      Sign In / Providers → Email), added 2026-07-17 with the switch to email + password auth
+      ([0011](../adr/0011-auth-boundary.md)). Without it, signup returns no session (an email
+      round-trip reappears) and a duplicate-email signup is silently obfuscated instead of
+      rejected. Not something a fresh clone can set for itself — needs documenting in the README
+      as a required one-time project setting, not a `.env` value.
+- [x] **`npm run build` failed `next build`'s type-check on three pre-existing errors** — found
+      2026-07-17 while verifying the auth swap compiles clean, all unrelated to auth (confirmed by
+      reproducing on unmodified `main`) and none touched by this session's auth edits. **Fixed the
+      same day:** `confirm-transfer-dialog.tsx`'s null-narrowing was fixed by an editor
+      auto-format; `hooks/use-realtime-ledger.ts:39` and `hooks/use-realtime-wallets.ts:37` each
+      cast a Supabase Realtime payload straight to a narrower row type (`as LedgerPayload` /
+      `as WalletPayload`), which `tsc` rejected because a DELETE payload's `new` is `{}`, not the
+      full row shape — fixed by routing the cast through `unknown` first (`as unknown as
+      LedgerPayload` / `WalletPayload`), matching the pattern TypeScript itself suggested. `next
+      dev` never ran this type-check, so none of these were caught until now — the frontend suite
+      has only ever been `vitest`, never a production build (see "Resolved — frontend test suite
+      fixed" below). `npm run build` now succeeds cleanly, unblocking M10's Dockerfile plan
+      (multi-stage `next build`).
 
 ### Environment (resolved)
 - ✅ **JDK 21** — Temurin `jdk-21.0.11.10-hotspot`. Note `JAVA_HOME` was set to a nonexistent

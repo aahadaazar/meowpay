@@ -12,16 +12,16 @@ during authoring (no browser was available then — see `docs/milestones/CHECKLI
 
 ## Why there's a new backend route
 
-MeowPay's only login is Supabase magic-link (ADR 0011) — no password, no backend auth
-endpoint. Several tests need **multiple, independently-authenticated humans** (RLS isolation,
-cross-human transfers), which a real inbox-click flow makes slow and hard to automate.
+MeowPay's login is Supabase email + password (ADR 0011) — GoTrue owns identity, there's no
+backend auth endpoint. Several tests need **multiple, independently-authenticated humans** (RLS
+isolation, cross-human transfers), which driving the real signup form for each one makes slow.
 
 `frontend/app/api/test/login/route.ts` is a **test-only** route, inert unless
 `E2E_TEST_MODE=true`, that mints a **real** Supabase session (via the service-role admin API's
-`generateLink` + `verifyOtp` — the same session-cookie mechanism `/auth/callback` uses) for a
-freshly-created human. It skips *clicking the email*, not verification: every session it
-produces is genuinely JWT-valid and subject to the same backend (`SecurityConfig`) and RLS
-(ADR 0012) checks as a real login.
+`createUser` + a fixed test password, then `signInWithPassword` — the same call the real login
+form makes) for a freshly-created human. It skips *filling out the signup form*, not
+verification: every session it produces is genuinely JWT-valid and subject to the same backend
+(`SecurityConfig`) and RLS (ADR 0012) checks as a real login.
 
 **Never set `E2E_TEST_MODE=true` outside a test run.**
 
@@ -87,9 +87,11 @@ tests/
 
 - **M0** — unauthenticated `/api/**` returns 401; unauthenticated visits redirect to `/login`.
 - **M1** — theme toggle flips `.dark`; visual pass at 375/768/1440px, light + dark.
-- **M3** — login form validation; a brand-new human's empty state; two cats each land their
-  500-treat welcome grant; one human's cats/balances never appear on another's dashboard (the
-  global recipient roster is the deliberate exception — see ADR 0012).
+- **M3** — signup/login form validation; a fresh signup lands on the dashboard with no email
+  step; sign-out and log-back-in; a repeat signup with the same email is rejected; a brand-new
+  human's empty state; two cats each land their 500-treat welcome grant; one human's
+  cats/balances never appear on another's dashboard (the global recipient roster is the
+  deliberate exception — see ADR 0012).
 - **M4** — the total hero sums every cat; a new cat's welcome grant lands in the trail **live,
   with no page refresh**; the trail collapses table → stacked cards below 768px; one human's
   realtime activity is never delivered to another human's socket (ADR 0013).
