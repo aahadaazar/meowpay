@@ -7,14 +7,22 @@ This repository is milestone-driven. The execution loop lives in [AGENTS.md](AGE
 roadmap lives in [docs/MILESTONES.md](docs/MILESTONES.md), and architectural decisions live in
 [docs/adr](docs/adr).
 
-## Current State
+## Current state
 
-M0 provides the foundation:
+The active slice is implemented through M12:
 
-- `backend/` contains a Spring Boot Kotlin resource-server skeleton.
-- `frontend/` contains a Next.js App Router shell with Tailwind and shadcn/ui configuration.
-- `supabase/migrations/` is present for the ledger migrations that begin in M2.
+- `backend/` contains the JWT-protected Spring Boot API for humans, cats, transfers and top-up.
+- `frontend/` contains the dashboard, wallet hero, cat cards, manual transfer composer, realtime
+  ledger trail, activity charts, and the button-triggered activity insight panel.
+- `supabase/migrations/` defines the M12 schema: one treasury wallet, one wallet per human, one
+  wallet per cat, append-only transfers/ledger entries, RLS for reads, and trusted database
+  functions for writes.
+- M8 and M11 are abandoned; M9 is complete and M10 remains not started in the roadmap.
 - `.env.example` documents the environment variables expected by the two runtimes.
+
+M12 supersedes the earlier cat-targeted top-up/welcome-grant model. A new signup starts with a
+human wallet at 0; top-up mints from treasury into that human wallet; humans then fund cats from
+their own wallet.
 
 ## System design
 
@@ -135,10 +143,14 @@ endpoint would need an ownership exception for the account that mints treats
   or authorization. `topup` is server-only and rejected from `/transfers/execute`
   ([ADR 0023](docs/adr/0023-funding-path-topup-mints-to-the-human.md)).
 
-## Local Setup Stub
+## Local setup
 
 Copy `.env.example` to `.env` and fill it with project-specific values before running either
 runtime. Do not commit `.env`.
+
+The M12 schema must be applied before the backend handles authenticated requests. The backend
+Docker container runs migrations automatically on startup; if you run `bootRun` directly, apply
+`supabase/migrations/` to the configured Supabase database first.
 
 The full clean-clone runbook is completed in M10. Until then, local commands are:
 

@@ -1,6 +1,6 @@
 # M8 — Agentic NL composer
 
-**Type:** fullstack · **Status:** not started
+**Type:** fullstack · **Status:** abandoned
 **ADRs:** [0016](../adr/0016-agent-proposes-human-confirms.md) ·
 [0017](../adr/0017-groq-model-split.md)
 
@@ -37,4 +37,5 @@ badge.
 
 ## Progress log
 
-- not started
+- 2026-07-17 — abandoned. Scope was documented but implementation did not start; no code was
+  committed for M8.

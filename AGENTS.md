@@ -12,8 +12,10 @@ the ADRs are for.
 | `docs/milestones/M0N-*.md` | *What, and in what order* — scope, tests, verify step | status changes; scope is discovered to be wrong |
 | `AGENTS.md` (this file) | *How* — the execution loop, tracking, guardrails | the process itself changes |
 
-**Nothing has been implemented yet.** `backend/`, `frontend/`, `supabase/migrations/` do not
-exist. M0 creates them. Everything below assumes you're picking this up cold.
+The repo is now implemented through M12's wallet model: `backend/`, `frontend/`, and
+`supabase/migrations/` exist, and the current money graph is
+`treasury wallet → human wallet → cat wallet → cat wallet`. M8 and M11 are abandoned; M9 is done
+and M10 remains not started. Everything below still applies when picking up new milestone work cold.
 
 ---
 
@@ -34,8 +36,10 @@ exist. M0 creates them. Everything below assumes you're picking this up cold.
 
 ## Milestone dependency order
 
-The milestone numbers are already a valid execution order — work M0 → M10 in sequence. The table
-is the *why*, for when you need to know if something can start early or what breaks if skipped:
+The milestone numbers were the original valid execution order, with M11/M12 added later. Work in
+dependency order, skip abandoned milestones unless a new decision revives them, and check
+`docs/MILESTONES.md` before starting. The table is the *why*, for when you need to know if
+something can start early or what breaks if skipped:
 
 | Milestone | Depends on | Because |
 |---|---|---|
@@ -47,9 +51,11 @@ is the *why*, for when you need to know if something can start early or what bre
 | M5 | M2, M4 | needs `execute_transfer` (M2) and a dashboard to watch it land on (M4) |
 | M6 | M4 | preset pills live on the cat card M4 built |
 | M7 | M4 | derives from the same ledger window the trail (M4) holds |
-| M8 | M3, M5 | reuses the `confirm-transfer-dialog` M5 built |
-| M9 | M2, M3 | summarizes the ledger (M2) for an authenticated human (M3) |
-| M10 | all of the above | packages the finished slice |
+| M8 | M3, M5 | abandoned; would have reused the `confirm-transfer-dialog` M5 built |
+| M9 | M3, M12 | summarizes the current wallet ledger (M12) for an authenticated human (M3) |
+| M10 | the finished slice | packages whatever scope is active when M10 starts |
+| M11 | — | abandoned; local Supabase e2e was rejected as out of scope |
+| M12 | M0–M7 | rewrites the money model after the dashboard, transfer, top-up and chart surfaces exist |
 
 M1 and M2 are mutually independent (both only need M0) — if working with parallel agents, they
 can run concurrently. A single agent should still do them in numeric order: it's simpler, and it
@@ -80,16 +86,18 @@ For milestone `MN`:
    (see [Tracking](#tracking)).
 8. Move to the next milestone whose dependencies are now satisfied.
 
-Stay inside the milestone's stated boundary. If implementing M5 surfaces something M8 will need,
-note it in M8's file — don't build it early. A milestone that quietly grows scope is exactly what
-"a few things done with care... than ten things half-wired" argues against.
+Stay inside the milestone's stated boundary. If implementing one milestone surfaces something a
+later milestone will need, note it in that later milestone's file — don't build it early. A
+milestone that quietly grows scope is exactly what "a few things done with care... than ten things
+half-wired" argues against.
 
 ## Tracking
 
 No separate tracker, state file, or database — **the milestone docs plus git history are the
 tracker**, kept in two places that must agree:
 
-1. **`docs/MILESTONES.md`**'s Status column — `not started` / `in progress` / `done`.
+1. **`docs/MILESTONES.md`**'s Status column — `not started` / `in progress` / `done` /
+   `abandoned`.
 2. **Each milestone file's own header** — same three values, same field.
 
 Once work starts on a milestone, add a `## Progress log` section (append-only, most recent last):
@@ -103,7 +111,9 @@ Once work starts on a milestone, add a `## Progress log` section (append-only, m
 ```
 
 `done` means: implementation complete, tests written (not necessarily run), and the Verify step
-either passed or explicitly recorded as unrunnable in this environment and why.
+either passed or explicitly recorded as unrunnable in this environment and why. `abandoned` means
+the scope is intentionally not part of the active build; do not implement it without recording a
+new decision.
 
 ## Commit discipline
 
@@ -138,8 +148,6 @@ once the happy path already works.
 - **The idempotency key is generated when the confirm dialog opens**, not per HTTP request — a
   key minted per-request makes the whole guarantee a no-op.
   ([0009](docs/adr/0009-idempotency-and-status.md))
-- **`/composer/parse` never writes to the database.** Test this directly; don't infer it from
-  "the code doesn't call the write path." ([0016](docs/adr/0016-agent-proposes-human-confirms.md))
 - **Model-supplied cat identifiers are discarded, not validated**, in the insight tool call —
   the query is always scoped from the JWT, never from a tool argument.
   ([0018](docs/adr/0018-tool-use-data-scoping.md))
@@ -192,6 +200,10 @@ the code.
 
 ## Quick reference
 
+**Database baseline** — M12 rewrote the empty-baseline migrations in place. The current schema is
+wallet-first: one treasury wallet, one human wallet per human, one cat wallet per cat, and
+`execute_transfer` accepts wallet IDs.
+
 **Backend endpoints** (all `/api`, all JWT-protected, no auth endpoints) — `GET /me` includes the
 human wallet; `GET /cats` includes cat wallet IDs; `POST /transfers/execute` accepts
 `senderWalletId` / `receiverWalletId`; `POST /wallet/topup` accepts only `{ idempotencyKey,
@@ -206,25 +218,26 @@ DESIGN.md · AGENTS.md · docs/{design,adr,milestones}/ ; docker-compose.yml
 
 backend/src/main/kotlin/com/meowpay/
   MeowPayApplication.kt
-  config/{SecurityConfig.kt, GroqConfig.kt}
-  web/{MeController.kt, CatController.kt, TransferController.kt, WalletController.kt,
-       ComposerController.kt, InsightController.kt}
-  service/{TransferService.kt, CatService.kt, OwnershipGuard.kt}
-  agent/{GroqClient.kt, ComposerAgent.kt, InsightAgent.kt}
+  config/{DatabaseConnectionVerifier.kt, SecurityConfig.kt}
+  web/{HealthController.kt, MeController.kt, CatController.kt, TransferController.kt,
+       WalletController.kt, InsightController.kt}
+  service/{TransferService.kt, CatService.kt, OwnershipGuard.kt, InsightService.kt}
+  agent/{GroqInsightClient.kt, InsightAgent.kt, InsightModelClient.kt}
   dto/ ; exception/GlobalExceptionHandler.kt
 backend/src/test/kotlin/...              # Testcontainers Postgres, real migrations
 
 frontend/
-  middleware.ts
-  app/{layout.tsx, globals.css, (auth)/login/page.tsx, auth/callback/route.ts, dashboard/page.tsx}
+  app/{layout.tsx, globals.css, page.tsx, (auth)/login/page.tsx, (auth)/signup/page.tsx,
+       dashboard/page.tsx, dashboard/loading.tsx}
   components/
-    theme-provider.tsx, theme-toggle.tsx
-    wallet-hero.tsx, cat-card.tsx, new-cat-dialog.tsx, topup-presets.tsx, ledger-trail.tsx
-    charts/{treat-flow-chart.tsx, top-recipients-chart.tsx, treat-distribution-chart.tsx, derive.ts}
-    transfer-composer/{manual-transfer-form.tsx, nl-composer.tsx, confirm-transfer-dialog.tsx}
+    dashboard.tsx, realtime-dashboard.tsx, wallet-hero.tsx, cat-card.tsx, new-cat-dialog.tsx,
+    topup-presets.tsx, ledger-trail.tsx, theme-provider.tsx, theme-toggle.tsx
     insight-panel.tsx
-  lib/supabase/{client.ts, server.ts, middleware.ts}, lib/api.ts, lib/types.ts
-  hooks/{use-realtime-wallets.ts, use-realtime-ledger.ts, use-cats.ts}
+    charts/{activity-charts.tsx, treat-flow-chart.tsx, top-recipients-chart.tsx,
+            treat-distribution-chart.tsx, derive.ts}
+    transfer-composer/{manual-transfer-form.tsx, confirm-transfer-dialog.tsx, types.ts}
+  lib/supabase/{client.ts, server.ts, middleware.ts}, lib/api.ts, lib/dashboard-types.ts
+  hooks/{use-realtime-wallets.ts, use-realtime-ledger.ts}
 
 supabase/migrations/
   0001_init_schema.sql · 0002_transfers_and_ledger.sql · 0003_execute_transfer_function.sql
@@ -237,11 +250,12 @@ supabase/migrations/
 ```
 backend:   SUPABASE_DB_URL          # Session Pooler string — IPv4 (0001, 0019)
            SUPABASE_JWT_SECRET      # (0011)
-           GROQ_API_KEY             # backend only, never NEXT_PUBLIC_ (0017)
-           GROQ_COMPOSER_MODEL=llama-3.1-8b-instant     (0017)
-           GROQ_INSIGHT_MODEL=llama-3.3-70b-versatile   (0017)
-           TOPUP_MAX=1000           # (0014)
+           SUPABASE_JWT_JWK_SET_URI # optional JWKS/asymmetric signing alternative (0011)
+           GROQ_API_KEY             # M9 only; backend only, never NEXT_PUBLIC_ (0017)
+           GROQ_INSIGHT_MODEL=llama-3.3-70b-versatile   # M9 only (0017)
+           TOPUP_MAX=1000           # (0023)
            CORS_ALLOWED_ORIGIN=http://localhost:3000
+           E2E_TEST_MODE=false      # only true for Playwright's local test-login route
 
 frontend:  NEXT_PUBLIC_SUPABASE_URL
            NEXT_PUBLIC_SUPABASE_ANON_KEY
