@@ -6,6 +6,7 @@ import { CatCard } from "@/components/cat-card";
 import { ActivityCharts } from "@/components/charts/activity-charts";
 import { TreatDistributionChart } from "@/components/charts/treat-distribution-chart";
 import { LedgerTrail } from "@/components/ledger-trail";
+import { InsightPanel } from "@/components/insight-panel";
 import { NewCatDialog } from "@/components/new-cat-dialog";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { WalletHero } from "@/components/wallet-hero";
@@ -13,7 +14,7 @@ import { ManualTransferForm } from "@/components/transfer-composer/manual-transf
 import type { CatOption } from "@/components/transfer-composer/types";
 import { useRealtimeLedger } from "@/hooks/use-realtime-ledger";
 import { useRealtimeWallets } from "@/hooks/use-realtime-wallets";
-import { createCat, executeTransfer, getCatRoster, topUp, type CatSummary, type ExecuteTransferInput, type TopupInput } from "@/lib/api";
+import { createCat, executeTransfer, getCatRoster, getInsightSummary, topUp, type CatSummary, type ExecuteTransferInput, type TopupInput } from "@/lib/api";
 import { ledgerEntryFromRow, sortLedgerEntries, type DashboardCat, type LedgerEntry, type WalletRealtimeRow } from "@/lib/dashboard-types";
 import { createClient } from "@/lib/supabase/client";
 
@@ -99,6 +100,12 @@ export function RealtimeDashboard({ displayName, initialWallet, initialCats, ini
     return topUp(session.access_token, input);
   }
 
+  async function requestInsight() {
+    const { data: { session } } = await createClient().auth.getSession();
+    if (!session) throw new Error("Your session has expired. Please sign in again.");
+    return (await getInsightSummary(session.access_token)).summary;
+  }
+
   async function signOut() {
     await createClient().auth.signOut();
     router.push("/login");
@@ -113,6 +120,7 @@ export function RealtimeDashboard({ displayName, initialWallet, initialCats, ini
       <WalletHero balance={wallet.balance} entries={entries} onTopUp={submitTopUp} walletId={wallet.id} />
       {cats.length === 0 ? <section className="product-mockup-card grid justify-items-center gap-4 py-12 text-center"><h2 className="text-display-sm">Create your first cat</h2><p className="max-w-md text-body-md text-body">Sign up, top up your wallet, then create and fund a cat.</p><button className="button-primary" onClick={() => setIsDialogOpen(true)} type="button">Create your first cat</button></section> : <section aria-label="Cat wallets" className="grid gap-4 md:grid-cols-2">{cats.map((cat) => <CatCard cat={cat} key={cat.id} onSendTreats={(target) => setComposerPrefill({ recipientWalletId: target.walletId, version: Date.now() })} />)}</section>}
       <ManualTransferForm humanWallet={{ walletId: wallet.id, name: "Your wallet", balance: wallet.balance }} ownedCats={cats.map((cat) => ({ walletId: cat.walletId, name: cat.name, balance: cat.balance }))} onSubmitTransfer={submitTransfer} prefill={composerPrefill} recipientCats={recipientCats} />
+      <InsightPanel onRequest={requestInsight} />
       <section aria-label="Treat charts" className="grid gap-4 md:grid-cols-2"><TreatDistributionChart balance={wallet.balance} cats={cats} /><ActivityCharts entries={entries} /></section>
       <LedgerTrail cats={cats} entries={entries} wallet={{ id: wallet.id, name: "You" }} />
     </div>

@@ -34,6 +34,8 @@ export type TopupInput = {
   amount: number;
 };
 
+export type InsightResponse = { summary: string };
+
 export type TransferResponse = {
   id: string;
   idempotencyKey: string;
@@ -114,4 +116,8 @@ export function topUp(accessToken: string, input: TopupInput): Promise<TransferR
     method: "POST",
     body: JSON.stringify(input),
   });
+}
+
+export function getInsightSummary(accessToken: string): Promise<InsightResponse> {
+  return request<InsightResponse>("/insights/summary", accessToken);
 }
