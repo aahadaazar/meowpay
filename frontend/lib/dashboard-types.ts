@@ -54,7 +54,7 @@ export function ledgerEntryFromRow(row: LedgerRealtimeRow): LedgerEntry {
     counterpartyName: row.counterparty_name,
     note: row.note,
     source: row.source,
-    initiatedBy: row.initiated_by,
+    initiatedBy: row.initiated_by ?? "",
     createdAt: row.created_at,
   };
 }

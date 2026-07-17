@@ -30,7 +30,7 @@ plus git history is the source of truth for progress.
 | [M9](milestones/M09-agentic-activity-insight.md) | Agentic activity insight | fullstack | not started | [0018](adr/0018-tool-use-data-scoping.md) |
 | [M10](milestones/M10-dockerization-and-readme.md) | Dockerization & README | packaging | not started | [0019](adr/0019-deployment-topology.md) |
 | [M11](milestones/M11-e2e-local-supabase.md) | e2e suite against local Supabase | tooling | abandoned | [0020](adr/0020-e2e-against-local-supabase.md) (Rejected) |
-| [M12](milestones/M12-treasury-entity-and-human-wallets.md) | Treasury as an entity; humans hold wallets | fullstack | not started | [0021](adr/0021-wallet-is-the-account.md) · [0022](adr/0022-humans-hold-wallets.md) · [0023](adr/0023-funding-path-topup-mints-to-the-human.md) |
+| [M12](milestones/M12-treasury-entity-and-human-wallets.md) | Treasury as an entity; humans hold wallets | fullstack | done | [0021](adr/0021-wallet-is-the-account.md) · [0022](adr/0022-humans-hold-wallets.md) · [0023](adr/0023-funding-path-topup-mints-to-the-human.md) |
 
 M0–M10 were the original 11-milestone plan and are all documented (M8–M10 not yet implemented).
 **M11 was added later** (2026-07-16), after a Playwright e2e suite (`e2e/`) was built and run
@@ -42,16 +42,17 @@ implementation reverted. See [ADR 0020](adr/0020-e2e-against-local-supabase.md) 
 
 ## Domain, in one paragraph
 
-Two actors: a **human** is the authenticated account and owns 1..N **cats**; each cat has a
-wallet. Humans create cats and top them up; cats send treats to cats — including a human's own
-cats to each other. Recipients are any non-system cat, not just the sender's own — the composer
-carries `From [my cat] → To [any cat]`, never a global "acting as" switcher.
+Two actors: a **human** is the authenticated account, holds one wallet, and owns 1..N **cats**;
+each cat has a wallet. Humans top up their own wallet, then fund cats; cats send treats to cats —
+including a human's own cats to each other. Recipients are any cat, not just the sender's own —
+the composer carries `From [my wallet or cat] → To [any cat]`, never a global "acting as" switcher.
 
 ## Backend endpoints (all `/api`, all JWT-protected; no auth endpoints)
 
-`GET /me` · `GET /cats` · `POST /cats` · `POST /transfers/execute` (manual and agent-confirm
-both call this one endpoint) · `POST /wallet/topup` · `POST /composer/parse` (proposal only) ·
-`GET /insights/summary`.
+`GET /me` (includes the human `walletId` + balance) · `GET /cats` (includes each cat `walletId`) ·
+`POST /cats` · `POST /transfers/execute { senderWalletId, receiverWalletId, ... }` (manual and
+agent-confirm both call this one endpoint) · `POST /wallet/topup { idempotencyKey, amount }` ·
+`POST /composer/parse` (proposal only) · `GET /insights/summary`.
 
 ## Overall verification (once implemented)
 

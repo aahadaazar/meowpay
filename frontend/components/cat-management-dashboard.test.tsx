@@ -10,8 +10,8 @@ describe("CatManagementDashboard", () => {
     const user = userEvent.setup();
     render(
       <CatManagementDashboard
-        me={{ id: "human-1", email: "human@example.test", displayName: "Human", cats: [] }}
-        onCreateCat={vi.fn().mockResolvedValue({ id: "cat-1", name: "Milo", balance: 500, createdAt: "2026-07-15T00:00:00Z" })}
+        me={{ id: "human-1", email: "human@example.test", displayName: "Human", walletId: "wallet-1", balance: 0, cats: [] }}
+        onCreateCat={vi.fn().mockResolvedValue({ id: "cat-1", walletId: "wallet-cat-1", name: "Milo", balance: 0, createdAt: "2026-07-15T00:00:00Z" })}
       />,
     );
 

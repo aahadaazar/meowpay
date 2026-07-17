@@ -131,7 +131,7 @@ once the happy path already works.
   ([0006](docs/adr/0006-ledger-first-money-movement.md),
   [0012](docs/adr/0012-rls-ownership-subquery.md))
 - **Ownership is checked server-side on every money endpoint**, from a client-supplied
-  `senderCatId` — the single most likely place to introduce a hole.
+  `senderWalletId` — the single most likely place to introduce a hole.
   ([0010](docs/adr/0010-actor-vs-account.md), [0012](docs/adr/0012-rls-ownership-subquery.md))
 - **`execute_transfer` failures are INSERTed, never RAISEd** — a raised exception rolls back the
   audit row it was supposed to keep. ([0008](docs/adr/0008-atomic-plpgsql-transfer.md))
@@ -150,8 +150,8 @@ once the happy path already works.
 - **Chart series colors come only from the validated palette** in `APP-EXTENSIONS.md` — never a
   new hex typed in because it "looks close enough."
   ([0004](docs/adr/0004-chart-palette-derivation.md))
-- **`transfers.source` values `topup` and `welcome_grant` are server-only** — `/transfers/execute`
-  must reject them from a client. ([0014](docs/adr/0014-topup-as-treasury-transfer.md))
+- **`transfers.source` value `topup` is server-only** — `/transfers/execute` must reject it from a
+  client; top-up resolves the caller's human wallet server-side. ([0023](docs/adr/0023-funding-path-topup-mints-to-the-human.md))
 
 ## Implementation-time checks
 
@@ -192,7 +192,10 @@ the code.
 
 ## Quick reference
 
-**Backend endpoints** (all `/api`, all JWT-protected, no auth endpoints) — full list in
+**Backend endpoints** (all `/api`, all JWT-protected, no auth endpoints) — `GET /me` includes the
+human wallet; `GET /cats` includes cat wallet IDs; `POST /transfers/execute` accepts
+`senderWalletId` / `receiverWalletId`; `POST /wallet/topup` accepts only `{ idempotencyKey,
+amount }` and resolves the caller's wallet server-side. Full list in
 [`docs/MILESTONES.md`](docs/MILESTONES.md#backend-endpoints-all-api-all-jwt-protected-no-auth-endpoints).
 
 **Repo layout** (from [0001](docs/adr/0001-stack-and-topology.md) /
@@ -216,8 +219,8 @@ frontend/
   app/{layout.tsx, globals.css, (auth)/login/page.tsx, auth/callback/route.ts, dashboard/page.tsx}
   components/
     theme-provider.tsx, theme-toggle.tsx
-    total-hero.tsx, cat-card.tsx, new-cat-dialog.tsx, topup-presets.tsx, ledger-trail.tsx
-    charts/{treat-flow-chart.tsx, top-recipients-chart.tsx, derive.ts}
+    wallet-hero.tsx, cat-card.tsx, new-cat-dialog.tsx, topup-presets.tsx, ledger-trail.tsx
+    charts/{treat-flow-chart.tsx, top-recipients-chart.tsx, treat-distribution-chart.tsx, derive.ts}
     transfer-composer/{manual-transfer-form.tsx, nl-composer.tsx, confirm-transfer-dialog.tsx}
     insight-panel.tsx
   lib/supabase/{client.ts, server.ts, middleware.ts}, lib/api.ts, lib/types.ts

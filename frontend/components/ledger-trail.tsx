@@ -32,7 +32,10 @@ function Amount({ entry }: { entry: LedgerEntry }) {
 }
 
 export function LedgerTrail({ cats, wallet, entries }: LedgerTrailProps) {
-  const walletsById = new Map([[wallet.id, { name: wallet.name }], ...cats.map((cat) => [cat.walletId, { name: cat.name }])]);
+  const walletsById = new Map<string, { name: string }>([
+    [wallet.id, { name: wallet.name }],
+    ...cats.map((cat): [string, { name: string }] => [cat.walletId, { name: cat.name }]),
+  ]);
   const rows = sortLedgerEntries(entries);
 
   return (

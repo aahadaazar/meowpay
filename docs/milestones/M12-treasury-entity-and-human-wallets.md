@@ -1,6 +1,6 @@
 # M12 — Treasury as an entity; humans hold wallets
 
-**Type:** fullstack · database + backend + frontend · **Status:** not started
+**Type:** fullstack · database + backend + frontend · **Status:** done
 **ADRs:** [0021](../adr/0021-wallet-is-the-account.md) ·
 [0022](../adr/0022-humans-hold-wallets.md) ·
 [0023](../adr/0023-funding-path-topup-mints-to-the-human.md)
@@ -186,4 +186,9 @@ treasury invisible to both.
 
 ## Progress log
 
-- not started
+- 2026-07-17 — started. Reworking the wallet model from the empty baseline migrations.
+- 2026-07-17 — done. Commits 71c81de..72b687f; migrations, wallet APIs, dashboard surfaces and
+  M4–M6 e2e specs now follow treasury → human → cat → cat. Tests were authored but not run per
+  AGENTS.md. `tsc --noEmit` passed and palette validation passed in both modes. The live Verify
+  walkthrough was not run: the available Supabase-backed environment contains prior e2e activity,
+  not a freshly re-initialized database for the rewritten-in-place M12 migrations.

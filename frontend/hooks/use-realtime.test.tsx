@@ -21,7 +21,7 @@ const realtime = vi.hoisted(() => {
 
 vi.mock("@/lib/supabase/client", () => ({ createClient: () => realtime.client }));
 
-function WalletProbe({ onChange }: { onChange: (wallet: { cat_id: string; balance: number }) => void }) {
+function WalletProbe({ onChange }: { onChange: (wallet: { id: string; balance: number }) => void }) {
   useRealtimeWallets(onChange);
   return null;
 }
@@ -46,8 +46,8 @@ describe("realtime dashboard hooks", () => {
     expect(realtime.client.channel).toHaveBeenCalledWith("dashboard-wallets");
     expect(realtime.channel.on).toHaveBeenCalledWith("postgres_changes", { event: "*", schema: "public", table: "wallets" }, expect.any(Function));
     const handler = realtime.channel.on.mock.calls[0][2] as (payload: unknown) => void;
-    act(() => handler({ new: { cat_id: "cat-1", balance: 725 } }));
-    expect(onChange).toHaveBeenCalledWith({ cat_id: "cat-1", balance: 725 });
+    act(() => handler({ new: { id: "wallet-1", balance: 725 } }));
+    expect(onChange).toHaveBeenCalledWith({ id: "wallet-1", balance: 725 });
   });
 
   it("does not double-subscribe wallets during a Strict Mode effect replay", async () => {
