@@ -1,6 +1,12 @@
 # 0020. e2e suite targets a local Supabase instance, not the hosted project
 
-**Status:** Accepted · **Date:** 2026-07-16 · **Milestone:** [M11](../milestones/M11-e2e-local-supabase.md)
+**Status:** Rejected (2026-07-17) · **Date:** 2026-07-16 · **Milestone:** [M11](../milestones/M11-e2e-local-supabase.md)
+
+**Rejected, recorded 2026-07-17:** implemented, then reverted. Decided out of scope for the
+current work — not worth the added local-Supabase-CLI dependency right now. The reasoning below
+(the rate-limit incident, the decision, the rejected alternatives) is left intact as the record;
+it simply wasn't acted on further. See [M11](../milestones/M11-e2e-local-supabase.md)'s progress
+log.
 
 ## Context
 

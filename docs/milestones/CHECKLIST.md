@@ -1,7 +1,7 @@
 # MeowPay — Milestone Checklist
 
 **8 of 12 complete.** M0–M7 done; M8–M9 deliberately deferred to clear testing debt; M10 not
-started; M11 (added 2026-07-16, see below) not started.
+started; M11 (added 2026-07-16) implemented then abandoned as out of scope, see below.
 **Backend suite green — 17 tests, 0 failures. Frontend suite green — 24 tests, 0 failures**
 (2026-07-16). A live-browser Playwright e2e suite (`e2e/`) now exists and was run against the full
 docker-compose stack — see "e2e suite run against the live stack" below. It surfaced and fixed a
@@ -21,7 +21,7 @@ Realtime dashboard crash found in that run is now fixed; the suite still has unr
 | M8 | [Agentic NL composer](M08-agentic-nl-composer.md) | fullstack | ⬜ not started |
 | M9 | [Agentic activity insight](M09-agentic-activity-insight.md) | fullstack | ⬜ not started |
 | M10 | [Dockerization & README](M10-dockerization-and-readme.md) | packaging | ⬜ not started |
-| M11 | [e2e suite against local Supabase](M11-e2e-local-supabase.md) | tooling | ⬜ not started |
+| M11 | [e2e suite against local Supabase](M11-e2e-local-supabase.md) | tooling | 🚫 abandoned |
 
 ---
 
@@ -347,18 +347,20 @@ is schedule, not dependency, driven. Resume with M8 once the testing backlog is 
 - [ ] Verify: `docker compose up --build` from a clean clone works end to end, **no undocumented
       manual step**
 
-### ⬜ M11 — e2e suite against local Supabase `tooling` · ADR 0020
+### 🚫 M11 — e2e suite against local Supabase `tooling` · ADR 0020 (Rejected)
 Added 2026-07-16, after the hosted-project e2e run above hit Supabase's admin-API rate limit
-mid-session. Full detail: [M11-e2e-local-supabase.md](M11-e2e-local-supabase.md).
-- [ ] `supabase start` (Supabase CLI) stood up for local e2e use, migrations 0001–0007 applied
-      against it
-- [ ] New `e2e/.env.e2e` (or equivalent) carrying local Supabase's URL/anon/service-role keys
-- [ ] Compose override or separate `--env-file` path so backend+frontend point at local Supabase
-      **only during an e2e run** — default `docker compose up` / `npm run dev` untouched
-- [ ] `e2e/README.md` updated: local-first documented as the default for iteration; hosted path
-      still documented as valid
-- [ ] Verify: full suite run twice back-to-back locally, zero rate-limit errors either time;
-      `supabase db reset` between runs actually clears state; hosted project untouched
+mid-session. Implemented the same day, then **abandoned as out of scope on 2026-07-17** — the
+implementation commit was reverted. Full detail:
+[M11-e2e-local-supabase.md](M11-e2e-local-supabase.md).
+- [x] ~~`supabase start` (Supabase CLI) stood up for local e2e use, migrations applied~~ — done,
+      then reverted
+- [x] ~~`e2e/.env.e2e` carrying local Supabase's URL/anon/service-role keys~~ — done, then reverted
+- [x] ~~Compose `MEOWPAY_ENV_FILE` switch so backend+frontend point at local Supabase only during
+      an e2e run~~ — done, then reverted
+- [x] ~~`e2e/README.md` updated with the local-first workflow~~ — done, then reverted
+- [ ] Verify step — never run: the environment implementing this had Docker but no Supabase CLI
+      (or host Node runtime), so local Supabase couldn't actually be started or reset. Moot now
+      that the milestone is abandoned.
 
 ---
 

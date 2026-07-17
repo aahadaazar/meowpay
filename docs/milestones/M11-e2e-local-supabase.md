@@ -1,7 +1,7 @@
 # M11 — e2e suite against local Supabase
 
-**Type:** tooling · **Status:** in progress
-**ADR:** [0020](../adr/0020-e2e-against-local-supabase.md)
+**Type:** tooling · **Status:** abandoned — out of scope
+**ADR:** [0020](../adr/0020-e2e-against-local-supabase.md) (Rejected)
 
 ## Why this milestone exists
 
@@ -59,3 +59,9 @@ retargeted; there's nothing further to write tests for.
 ## Progress log
 
 - 2026-07-16 — started. Retargeting e2e infrastructure to an isolated local Supabase instance.
+- 2026-07-17 — abandoned, out of scope. The implementation (`docker-compose.yml`'s
+  `MEOWPAY_ENV_FILE` switch, `e2e/.env.e2e`, `supabase/config.toml`, the updated `e2e/README.md`)
+  was reverted (commit reverting `feat(m11): target local Supabase for e2e`). Decided not worth
+  pursuing right now — outside the current scope of work. This file and
+  [ADR 0020](../adr/0020-e2e-against-local-supabase.md) stay as the record of the decision and why
+  it was later dropped, per this project's own convention of never deleting a decision record.
