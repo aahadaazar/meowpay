@@ -1,6 +1,14 @@
 # 0010. Actor vs. account — `initiated_by` records who acted, not whose money moved
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M2](../milestones/M02-ledger-core.md)
+**Status:** Superseded by [0022](0022-humans-hold-wallets.md) · **Date:** 2026-07-15 ·
+**Milestone:** [M2](../milestones/M02-ledger-core.md)
+
+> **Superseded 2026-07-17 by [0022](0022-humans-hold-wallets.md).** The actor/account split below
+> **stands** and is still the model. Two claims in it are now false: **"a human has no wallet"** —
+> humans hold wallets as of [0021](0021-wallet-is-the-account.md) — and the **nullable
+> `initiated_by`**, whose only case was the welcome grant that
+> [0023](0023-funding-path-topup-mints-to-the-human.md) removes. `initiated_by` is now `NOT NULL`
+> and the account is a `sender_wallet_id`. Read 0022 for the current model.
 
 ## Context
 

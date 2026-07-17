@@ -1,6 +1,14 @@
 # 0007. Treasury-backed funding, and the conservation invariant it unlocks
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M2](../milestones/M02-ledger-core.md)
+**Status:** Superseded by [0021](0021-wallet-is-the-account.md) · **Date:** 2026-07-15 ·
+**Milestone:** [M2](../milestones/M02-ledger-core.md)
+
+> **Superseded 2026-07-17 by [0021](0021-wallet-is-the-account.md).** The core decision below —
+> a system account funds every treat entering the system, through the ledger — **still stands**,
+> and the conservation invariant it unlocks is unchanged. What reversed: the treasury is no longer
+> a **cat** (it is a wallet that belongs to nobody), and the **welcome grant** is removed
+> ([0023](0023-funding-path-topup-mints-to-the-human.md)). Read 0021 for the current model; this
+> document remains the argument for *why funding goes through the ledger at all*.
 
 ## Context
 

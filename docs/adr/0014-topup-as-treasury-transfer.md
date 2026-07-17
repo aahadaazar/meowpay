@@ -1,6 +1,15 @@
 # 0014. Top-up is a treasury transfer; the amount policy is server-side
 
-**Status:** Accepted · **Date:** 2026-07-15 · **Milestone:** [M6](../milestones/M06-topup.md)
+**Status:** Superseded by [0023](0023-funding-path-topup-mints-to-the-human.md) ·
+**Date:** 2026-07-15 · **Milestone:** [M6](../milestones/M06-topup.md)
+
+> **Superseded 2026-07-17 by [0023](0023-funding-path-topup-mints-to-the-human.md).** The
+> structural decision below — a top-up is not a new operation, it is a transfer through the same
+> `execute_transfer` — **stands**, and is why the M12 restructure added no money-movement code.
+> Two things reversed: a top-up now targets the **human's own wallet** (no `catId`, resolved from
+> the JWT), and the **preset allowlist** is replaced by a free amount field bounded only by
+> `TOPUP_MAX` — the product now ships a field, which an allowlist cannot express. Read 0023 for
+> the current policy.
 
 ## Context
 
