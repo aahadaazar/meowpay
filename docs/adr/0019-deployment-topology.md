@@ -23,7 +23,6 @@ backend:   build ./backend, port 8080
            SUPABASE_DB_URL          # Session Pooler string — IPv4
            SUPABASE_JWT_SECRET
            GROQ_API_KEY
-           GROQ_COMPOSER_MODEL=llama-3.1-8b-instant
            GROQ_INSIGHT_MODEL=llama-3.3-70b-versatile
            TOPUP_MAX=1000
            CORS_ALLOWED_ORIGIN=http://localhost:3000

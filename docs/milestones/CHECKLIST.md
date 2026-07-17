@@ -1,7 +1,8 @@
 # MeowPay — Milestone Checklist
 
-**8 of 12 complete.** M0–M7 done; M8–M9 deliberately deferred to clear testing debt; M10 not
-started; M11 (added 2026-07-16) implemented then abandoned as out of scope, see below.
+**8 of 12 complete.** M0–M7 done; M8 abandoned (2026-07-17); M9 deliberately deferred to clear
+testing debt; M10 not started; M11 (added 2026-07-16) implemented then abandoned as out of scope,
+see below.
 **Backend suite green — 17 tests, 0 failures. Frontend suite green — 24 tests, 0 failures**
 (2026-07-16). A live-browser Playwright e2e suite (`e2e/`) now exists and was run against the full
 docker-compose stack — see "e2e suite run against the live stack" below. It surfaced and fixed a
@@ -18,7 +19,7 @@ Realtime dashboard crash found in that run is now fixed; the suite still has unr
 | M5 | [Manual transfer](M05-manual-transfer.md) | fullstack | ✅ done |
 | M6 | [Top-up](M06-topup.md) | fullstack | ✅ done |
 | M7 | [Activity charts](M07-activity-charts.md) | fullstack | ✅ done |
-| M8 | [Agentic NL composer](M08-agentic-nl-composer.md) | fullstack | ⬜ not started |
+| M8 | [Agentic NL composer](M08-agentic-nl-composer.md) | fullstack | 🚫 abandoned |
 | M9 | [Agentic activity insight](M09-agentic-activity-insight.md) | fullstack | ⬜ not started |
 | M10 | [Dockerization & README](M10-dockerization-and-readme.md) | packaging | ⬜ not started |
 | M11 | [e2e suite against local Supabase](M11-e2e-local-supabase.md) | tooling | 🚫 abandoned |
@@ -259,21 +260,20 @@ The brief explicitly checks that *"the repo is public and runs from a fresh clon
 
 ### Dependency order
 ```
-M4 (dashboard)  ──┬── M5 (manual transfer) ── M8 (NL composer, reuses M5's confirm dialog)
+M4 (dashboard)  ──┬── M5 (manual transfer)
                   ├── M6 (top-up, pills live on M4's cat cards)
                   ├── M7 (charts, read M4's ledger window)
                   └── M9 (insight, largely independent)
-                                                              all ──> M10 (package)
+                                                   all ──> M10 (package)
 ```
-Critical path: **M4 → M5 → M8 → M10.** M6, M7, M9 can slot in anywhere after M4. M4 and M5 are
-done — see [M04-realtime-dashboard.md](M04-realtime-dashboard.md) and
+Critical path: **M4 → M5 → M10.** M6, M7, M9 can slot in anywhere after M4. M4 and M5 are done —
+see [M04-realtime-dashboard.md](M04-realtime-dashboard.md) and
 [M05-manual-transfer.md](M05-manual-transfer.md).
 
-**M8 and M9 are deliberately deferred (decided 2026-07-16)** to clear the accumulated testing
+**M9 is deliberately deferred (decided 2026-07-16)** to clear the accumulated testing
 debt first: the deferred frontend suite (M0–M7), the palette validator, and the outstanding
-verify walkthroughs below. Neither M8 nor M9 is on a path that requires this work to finish
-first — M8 depends only on M4/M5 (already done) and M9 is largely independent — so the deferral
-is schedule, not dependency, driven. Resume with M8 once the testing backlog is cleared.
+verify walkthroughs below. M9 is largely independent, so the deferral is schedule, not
+dependency, driven. Resume with M9 once the testing backlog is cleared.
 
 ---
 
@@ -314,18 +314,15 @@ is schedule, not dependency, driven. Resume with M8 once the testing backlog is 
 - [ ] Verify: visual pass at 375/768/1440 in both themes — not run (no frontend runtime /
       live app walkthrough this session)
 
-### ⬜ M8 — Agentic NL composer `fullstack` · ADR 0016/0017
-- [ ] `GroqClient` — OpenAI-compatible HTTP via `RestClient`, no SDK
-- [ ] `ComposerAgent` — `llama-3.1-8b-instant`, `tool_choice` pinned to `propose_transfer`,
-      roster injected so the model resolves names to **real ids it can see**
-- [ ] `POST /api/composer/parse { message, senderCatId }` → proposal only; unknown cat / bad
-      amount → 422
-- [ ] Pills ("Send" / "Ask MeowPay", lavender) → `nl-composer` → proposal → **M5's confirm
-      dialog** → **the same `/transfers/execute`**, `source='agent'`
-- [ ] Tests: valid proposal; rejects nonexistent recipient; rejects unowned `senderCatId`;
-      **asserts `/composer/parse` never writes to the DB** ← the load-bearing property
-- [ ] Verify: "send Milo 10 treats for the red dot" → proposal → confirm → lands, indistinguishable
-      in the trail from a manual send except its `source` badge
+### 🚫 M8 — Agentic NL composer `fullstack` · ADR 0016/0017 (Abandoned)
+Abandoned 2026-07-17 as out of scope and non-critical after M4–M7 verification work. The feature
+would have added a natural-language composer for transfers — *"send Milo 10 treats"* — but it is
+purely additive and doesn't block M10 packaging or any other core functionality. The confirm
+dialog and `/transfers/execute` endpoint from M5 handle all transfer paths; M8 would only have
+added an alternative input surface. M9 (insight, also agentic) is independent and can proceed
+separately if prioritized later.
+
+No code was committed for M8; the scope was defined but implementation never started.
 
 ### ⬜ M9 — Agentic activity insight `fullstack` · ADR 0018
 - [ ] `InsightAgent` — `llama-3.3-70b-versatile`; **forced** `get_recent_transactions` whose
