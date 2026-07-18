@@ -4,12 +4,12 @@ export function avatarUrl(seed: string) {
   return `https://api.dicebear.com/9.x/bottts-neutral/svg?seed=${encodeURIComponent(seed)}`;
 }
 
-export function CatCard({ cat, onSendTreats }: { cat: DashboardCat; onSendTreats?: (cat: DashboardCat) => void }) {
-  return <article className="product-mockup-card">
+export function CatCard({ cat, isGlowing, onFund }: { cat: DashboardCat; isGlowing?: boolean; onFund?: (cat: DashboardCat) => void }) {
+  return <article className={`product-mockup-card${isGlowing ? " animate-cat-glow" : ""}`}>
     <div className="flex items-start justify-between gap-4">
       <div className="flex min-w-0 items-center gap-3"><img alt="" className="h-11 w-11 rounded-full bg-surface-card" height={44} src={avatarUrl(cat.name)} width={44} /><div className="min-w-0"><p className="text-caption-uppercase uppercase text-muted-foreground">Cat wallet</p><h2 className="truncate text-title-lg">{cat.name}</h2></div></div>
       <p className="shrink-0 text-title-md tabular-nums">{cat.balance.toLocaleString()} <span className="text-body-sm text-body">treats</span></p>
     </div>
-    {onSendTreats ? <button className="button-secondary mt-5" onClick={() => onSendTreats(cat)} type="button">Send treats</button> : null}
+    {onFund ? <button className="button-secondary mt-5" onClick={() => onFund(cat)} type="button">Fund this cat</button> : null}
   </article>;
 }
