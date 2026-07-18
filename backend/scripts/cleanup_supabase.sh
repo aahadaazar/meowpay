@@ -113,8 +113,7 @@ SQL
 run_cleanup() {
   psql "$database_url" \
     -v ON_ERROR_STOP=1 \
-    -v test_email_like="$test_email_like" \
-    -v treasury_wallet_id="$treasury_wallet_id" <<'SQL'
+    -v test_email_like="$test_email_like" <<'SQL'
 BEGIN;
 
 CREATE TEMP TABLE target_auth_users ON COMMIT DROP AS
