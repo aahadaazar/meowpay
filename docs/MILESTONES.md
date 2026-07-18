@@ -28,7 +28,7 @@ plus git history is the source of truth for progress.
 | [M7](milestones/M07-activity-charts.md) | Activity charts | fullstack | done | [0015](adr/0015-client-side-chart-derivation.md) |
 | [M8](milestones/M08-agentic-nl-composer.md) | Agentic NL composer | fullstack | abandoned | [0016](adr/0016-agent-proposes-human-confirms.md) · [0017](adr/0017-groq-model-split.md) |
 | [M9](milestones/M09-agentic-activity-insight.md) | Agentic activity insight | fullstack | done | [0018](adr/0018-tool-use-data-scoping.md) |
-| [M10](milestones/M10-dockerization-and-readme.md) | Dockerization & README | packaging | not started | [0019](adr/0019-deployment-topology.md) |
+| [M10](milestones/M10-dockerization-and-readme.md) | Dockerization & README | packaging | done | [0019](adr/0019-deployment-topology.md) |
 | [M11](milestones/M11-e2e-local-supabase.md) | e2e suite against local Supabase | tooling | abandoned | [0020](adr/0020-e2e-against-local-supabase.md) (Rejected) |
 | [M12](milestones/M12-treasury-entity-and-human-wallets.md) | Treasury as an entity; humans hold wallets | fullstack | done | [0021](adr/0021-wallet-is-the-account.md) · [0022](adr/0022-humans-hold-wallets.md) · [0023](adr/0023-funding-path-topup-mints-to-the-human.md) |
 

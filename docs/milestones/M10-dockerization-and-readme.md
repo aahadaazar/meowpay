@@ -1,6 +1,6 @@
 # M10 — Dockerization & README
 
-**Type:** packaging · **Status:** not started
+**Type:** packaging · **Status:** done
 **ADR:** [0019](../adr/0019-deployment-topology.md)
 
 ## Scope
@@ -30,4 +30,10 @@ step.
 
 ## Progress log
 
-- not started
+- 2026-07-18 — started. Reviewing clean-clone packaging, Compose wiring, and setup documentation.
+- 2026-07-18 — done. Commits 0e8e041..9261497 add production multi-stage images, Compose wiring,
+  and the clean-clone README. `docker compose config --quiet` passed. `docker compose build` was
+  attempted with configured Supabase values, but this execution environment terminated the Gradle
+  image build before completion; the pre-existing development images were therefore not treated as
+  verification of the new production configuration. Backend/frontend test suites were authored in
+  their earlier milestones and not run, per the project method.
