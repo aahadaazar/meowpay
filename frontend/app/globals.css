@@ -177,4 +177,20 @@
     font-weight: 600;
     line-height: 1;
   }
+
+  .animate-cat-glow {
+    animation: cat-card-glow 1.8s ease-out;
+  }
+}
+
+@keyframes cat-card-glow {
+  0% {
+    box-shadow: 0 0 0 0 var(--chart-credit);
+  }
+  20% {
+    box-shadow: 0 0 0 4px var(--chart-credit);
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
