@@ -12,6 +12,7 @@ cats. It is built with Next.js, Kotlin/Spring Boot, and Supabase.
   idempotency protection.
 - Top-ups into the signed-in human's wallet.
 - Activity charts and an AI-generated account-activity summary.
+- A light/dark theme toggle across the product surface.
 - Database migrations, access controls, backend integration tests, frontend tests, Docker images,
   and Docker Compose for the application services.
 
@@ -21,7 +22,10 @@ The project is organised as a frontend, backend, and Supabase migration set:
 frontend/              Next.js application
 backend/               Kotlin / Spring Boot API
 supabase/migrations/   database schema and functions
-docker-compose.yml     application runtime
+e2e/                    Playwright end-to-end suite
+docs/                   milestones, ADRs, and design docs
+scripts/                build and validation scripts (e.g. palette validator)
+docker-compose.yml      application runtime
 ```
 
 ## Stack
@@ -44,6 +48,29 @@ docker-compose.yml     application runtime
 - Recorded the workflow in [AGENTS.md](AGENTS.md),
   [the milestone roadmap](docs/MILESTONES.md), and [the ADRs](docs/adr/). The AI agents were
   development collaborators, not part of MeowPay's runtime.
+
+## Milestones
+
+Full detail — scope, ADR links, and progress notes — lives in [docs/MILESTONES.md](docs/MILESTONES.md)
+and `docs/milestones/`. [docs/milestones/CHECKLIST.md](docs/milestones/CHECKLIST.md) is a separate,
+manual testing checklist run by hand against a running application; it is not part of the milestone
+tracker.
+
+| Milestone | Description | Date done | Status |
+|---|---|---|---|
+| M0 | Foundation & scaffolding | 2026-07-15 | done |
+| M1 | Design system | 2026-07-15 | done |
+| M2 | Ledger core — the centerpiece | 2026-07-15 | done |
+| M3 | Auth & cat management | 2026-07-15 | done |
+| M4 | Realtime dashboard: total, cats, trail | 2026-07-16 | done |
+| M5 | Manual transfer | 2026-07-16 | done |
+| M6 | Top-up | 2026-07-16 | done |
+| M7 | Activity charts | 2026-07-16 | done |
+| M8 | Agentic NL composer | 2026-07-17 | abandoned |
+| M9 | Agentic activity insight | 2026-07-17 | done |
+| M10 | Dockerization & README | 2026-07-18 | done |
+| M11 | e2e suite against local Supabase | 2026-07-17 | abandoned |
+| M12 | Treasury as an entity; humans hold wallets | 2026-07-17 | done |
 
 ## How the application works
 
