@@ -3,38 +3,31 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
-      target: development
-    working_dir: /workspace
     env_file:
       - .env
     environment:
-      CORS_ALLOWED_ORIGIN: http://localhost:3000
-      GRADLE_USER_HOME: /gradle-cache
+      CORS_ALLOWED_ORIGIN: ${CORS_ALLOWED_ORIGIN:-http://localhost:3000}
+      SUPABASE_DB_URL: ${SUPABASE_DB_URL}
+      SUPABASE_JWT_SECRET: ${SUPABASE_JWT_SECRET:-}
+      SUPABASE_JWT_JWK_SET_URI: ${SUPABASE_JWT_JWK_SET_URI:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      GROQ_INSIGHT_MODEL: ${GROQ_INSIGHT_MODEL:-llama-3.3-70b-versatile}
+      TOPUP_MAX: ${TOPUP_MAX:-1000}
+      E2E_TEST_MODE: ${E2E_TEST_MODE:-false}
     ports:
       - "8080:8080"
-    volumes:
-      - ./backend:/workspace
-      - gradle_cache:/gradle-cache
 
   frontend:
     build:
-      context: ./frontend
-      target: development
-    working_dir: /workspace
-    env_file:
-      - .env
+      context: .
+      dockerfile: frontend/Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8080}
     environment:
-      NEXT_PUBLIC_BACKEND_URL: http://localhost:8080
+      NEXT_PUBLIC_BACKEND_URL: ${NEXT_PUBLIC_BACKEND_URL:-http://localhost:8080}
     ports:
       - "3000:3000"
-    volumes:
-      - ./frontend:/workspace
-      - frontend_node_modules:/workspace/node_modules
-      - frontend_next:/workspace/.next
     depends_on:
       - backend
-
-volumes:
-  gradle_cache:
-  frontend_node_modules:
-  frontend_next:

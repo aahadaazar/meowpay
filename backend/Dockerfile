@@ -1,30 +1,21 @@
-FROM eclipse-temurin:21-jdk AS development
-
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends postgresql-client \
-    && rm -rf /var/lib/apt/lists/*
+FROM eclipse-temurin:21-jdk AS build
 
 WORKDIR /workspace
 
-ENV GRADLE_USER_HOME=/tmp/meowpay-gradle-home
-
-# Prime the Gradle wrapper and dependency cache in a stable layer.
+# The committed wrapper makes the image independent of a host Gradle install.
 COPY backend/gradlew backend/build.gradle.kts backend/settings.gradle.kts ./
 COPY backend/gradle ./gradle
-RUN chmod +x gradlew \
-    && ./gradlew --no-daemon dependencies --configuration runtimeClasspath \
-    && ./gradlew --no-daemon dependencies --configuration testRuntimeClasspath \
-    && mkdir -p /opt/meowpay \
-    && cp -a "$GRADLE_USER_HOME"/. /opt/meowpay/gradle-home/
-
-COPY backend/docker-entrypoint.sh /usr/local/bin/meowpay-backend
-RUN chmod +x /usr/local/bin/meowpay-backend
+RUN chmod +x gradlew
 
 COPY backend/src ./src
-COPY backend/scripts ./scripts
-COPY supabase/migrations /opt/meowpay/migrations
+RUN ./gradlew --no-daemon bootJar
+
+FROM eclipse-temurin:21-jre AS runtime
+
+WORKDIR /app
+
+COPY --from=build /workspace/build/libs/*.jar app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["/usr/local/bin/meowpay-backend"]
-CMD ["./gradlew", "--no-daemon", "bootRun"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
