@@ -15,6 +15,7 @@ data class CatRosterResponse(
     val id: UUID,
     val walletId: UUID,
     val name: String,
+    val ownerName: String,
 )
 
 data class MeResponse(

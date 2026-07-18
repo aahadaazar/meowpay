@@ -81,7 +81,7 @@ export function createCat(accessToken: string, name: string): Promise<CatSummary
   });
 }
 
-export type CatRosterEntry = { id: string; walletId: string; name: string };
+export type CatRosterEntry = { id: string; walletId: string; name: string; ownerName: string };
 
 export function getCatRoster(accessToken: string): Promise<CatRosterEntry[]> {
   return request<CatRosterEntry[]>("/cats", accessToken);

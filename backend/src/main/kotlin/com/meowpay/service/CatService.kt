@@ -52,9 +52,10 @@ class CatService(
     fun roster(): List<CatRosterResponse> =
         jdbcClient.sql(
             """
-            SELECT c.id, w.id AS wallet_id, c.name
+            SELECT c.id, w.id AS wallet_id, c.name, h.display_name AS owner_name
             FROM public.cats c
             JOIN public.wallets w ON w.cat_id = c.id AND w.kind = 'cat'
+            JOIN public.humans h ON h.id = c.human_id
             ORDER BY c.name ASC, c.id ASC
             """.trimIndent(),
         )
@@ -128,6 +129,7 @@ class CatService(
                 id = rs.getObject("id", UUID::class.java),
                 walletId = rs.getObject("wallet_id", UUID::class.java),
                 name = rs.getString("name"),
+                ownerName = rs.getString("owner_name"),
             )
         }
     }
