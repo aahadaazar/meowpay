@@ -25,6 +25,15 @@ docker-compose.yml     application runtime
 ```
 
 ## How we built it
+## Stack
+
+- **Frontend:** Next.js 14, React 18, TypeScript, Tailwind CSS, Supabase SSR, React Hook Form,
+  Zod, and Lucide icons.
+- **Backend:** Kotlin, Spring Boot 3, Spring Security, Spring JDBC, and PostgreSQL.
+- **Platform:** Supabase for authentication, database, row-level access control, and realtime;
+  Groq for the activity-summary feature.
+- **Delivery:** Docker, Docker Compose, Gradle, and npm.
+
 
 The build was driven by written specifications: milestones define the delivery order and
 acceptance checks, and ADRs capture decisions as they were made. That gave the AI agents a clear
@@ -43,6 +52,14 @@ development collaborators; they are not part of MeowPay's runtime. The in-produc
 is a separate, backend-mediated Groq feature.
 
 ## Run the application
+## Testing
+
+- **Backend:** JUnit 5 via `spring-boot-starter-test`, Spring Security Test, and Testcontainers
+  PostgreSQL for integration tests against the real migrations.
+- **Frontend:** Vitest, React Testing Library, `@testing-library/user-event`,
+  `@testing-library/jest-dom`, and jsdom.
+- **End to end:** Playwright.
+
 
 With the required environment values already provided, start the application with Docker:
 
