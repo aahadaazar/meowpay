@@ -17,7 +17,7 @@ The active slice is implemented through M12:
 - `supabase/migrations/` defines the M12 schema: one treasury wallet, one wallet per human, one
   wallet per cat, append-only transfers/ledger entries, RLS for reads, and trusted database
   functions for writes.
-- M8 and M11 are abandoned; M9 is complete and M10 remains not started in the roadmap.
+- M8 and M11 are abandoned; M9 and the clean-clone M10 packaging are complete.
 - `.env.example` documents the environment variables expected by the two runtimes.
 
 M12 supersedes the earlier cat-targeted top-up/welcome-grant model. A new signup starts with a
@@ -145,22 +145,80 @@ endpoint would need an ownership exception for the account that mints treats
 
 ## Local setup
 
-Copy `.env.example` to `.env` and fill it with project-specific values before running either
-runtime. Do not commit `.env`.
+MeowPay runs as two containers against a hosted Supabase project. Docker is the only local
+runtime prerequisite; Supabase provides Auth, Postgres, and Realtime.
 
-The M12 schema must be applied before the backend handles authenticated requests. The backend
-Docker container runs migrations automatically on startup; if you run `bootRun` directly, apply
-`supabase/migrations/` to the configured Supabase database first.
+### Run from a clean clone
 
-The full clean-clone runbook is completed in M10. Until then, local commands are:
+1. Create a Supabase project. In **Connect**, copy the **Session Pooler** connection string on
+   port 5432 — not the direct database URL, which may be IPv6-only. Copy the project URL and anon
+   key from **Connect**, and either the JWT secret or JWKS URL from the Auth settings.
+2. Apply the migrations in lexical order. The application deliberately does not migrate at boot:
+   schema changes are an operator action, not a race between service replicas. With `psql`
+   installed, use the same Session Pooler URL from the next step:
 
-```bash
-cd backend
-./gradlew bootRun
-```
+   ```bash
+   export DATABASE_URL='postgresql://postgres.PROJECT_REF:YOUR_DB_PASSWORD@aws-0-REGION.pooler.supabase.com:5432/postgres'
+   for migration in supabase/migrations/*.sql; do
+     psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$migration"
+   done
+   ```
 
-```bash
-cd frontend
-npm install
-npm run dev
-```
+   Alternatively, run each file in `supabase/migrations/` in the Supabase SQL Editor, in filename
+   order. Apply them only to a new/empty MeowPay schema; the baseline migrations are not an
+   upgrade path for an older schema.
+3. Create the local configuration and replace every placeholder:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   `SUPABASE_DB_URL` is a JDBC Session Pooler string for Kotlin, while the migration command above
+   uses the equivalent `postgresql://` form. Keep `NEXT_PUBLIC_BACKEND_URL=http://localhost:8080`:
+   it is used by the browser, so a Compose service hostname would not resolve. `GROQ_API_KEY` is
+   backend-only — never give it a `NEXT_PUBLIC_` prefix. Do not commit `.env`.
+4. Build and start both services:
+
+   ```bash
+   docker compose up --build
+   ```
+
+   Open [http://localhost:3000](http://localhost:3000), create an account, and sign in. The
+   backend is available at `http://localhost:8080`; its health endpoint is
+   [http://localhost:8080/api/health](http://localhost:8080/api/health).
+
+To stop the stack, use `docker compose down`. Images contain only their runtime artifacts: a JRE
+and Spring Boot jar for the backend, and Next.js's traced standalone server for the frontend.
+
+## Trade-offs
+
+- **Treats are freely mintable.** A top-up records a treasury transfer but does not charge a real
+  bank account. Production would authorize a payment provider and credit only after settlement;
+  that would introduce asynchronous, pending top-ups. This is the trade-off argued in
+  [ADR 0007](docs/adr/0007-treasury-backed-funding.md) and
+  [ADR 0014](docs/adr/0014-topup-as-treasury-transfer.md), with the current wallet route in
+  [ADR 0023](docs/adr/0023-funding-path-topup-mints-to-the-human.md).
+- **Supabase is hosted rather than bundled.** A local Postgres container would not reproduce
+  Supabase Auth or Realtime; a full local Supabase stack would add a much heavier setup. The
+  consequence is an online project prerequisite, documented in
+  [ADR 0019](docs/adr/0019-deployment-topology.md).
+- **The activity insight is advisory.** Groq can summarize activity, but it cannot authorize or
+  write a transfer. Its data retrieval is scoped from the caller JWT, not model-supplied IDs;
+  the product-agent boundaries are explained in
+  [ADR 0016](docs/adr/0016-agent-proposes-human-confirms.md),
+  [ADR 0017](docs/adr/0017-groq-model-split.md), and
+  [ADR 0018](docs/adr/0018-tool-use-data-scoping.md).
+
+## How Claude Code built the repo
+
+Claude Code was the implementation collaborator, not a runtime component of MeowPay. The work was
+split into small, dependency-ordered milestones; each milestone records its scope, tests, and
+verification step in [`docs/milestones`](docs/milestones/), while ADRs preserve the reasoning for
+cross-cutting choices. [`AGENTS.md`](AGENTS.md) is the operating loop: read the milestone and its
+ADRs, mark work in progress, implement and author tests together, attempt the stated verification,
+commit coherent units, then record the outcome. The resulting git history and progress logs are
+part of the deliverable.
+
+That workflow is intentionally distinct from the in-app Groq insight feature: Claude Code helped
+produce and document the application; Groq is a backend-mediated product feature that summarizes
+the authenticated user's ledger data.
