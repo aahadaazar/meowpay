@@ -1,6 +1,6 @@
 # M10 — Dockerization & README
 
-**Type:** packaging · **Status:** done
+**Type:** packaging · **Status:** in progress
 **ADR:** [0019](../adr/0019-deployment-topology.md)
 
 ## Scope
@@ -37,3 +37,8 @@ step.
   image build before completion; the pre-existing development images were therefore not treated as
   verification of the new production configuration. Backend/frontend test suites were authored in
   their earlier milestones and not run, per the project method.
+- 2026-07-18 — resumed. Tailoring the README for take-home reviewers: delivery, AI-assisted
+  workflow, and environment-provided execution only.
+- 2026-07-18 — done. README now presents the delivered slice, the Opus/Terra/Sonnet workflow,
+  and the Docker execution path for provided environment values; detailed architecture and
+  trade-off sections were removed at the request of the take-home owner.
